@@ -48,8 +48,8 @@ function makeRemoteImpl({ runShSha, wrapperRel, wrapperSha, submit }) {
     if (command.includes("test -s PREPARED_SHA256.txt")) return { stdout: `${runShSha}  scripts/run.sh\n`, stderr: "", exitCode: 0 };
     // stageRecipeWrapper remote sha256 gate on the wrapper.
     if (command.includes("sha256sum") && command.includes("genbio-recipes/")) return { stdout: `${wrapperSha}  ${wrapperRel}\n`, stderr: "", exitCode: 0 };
-    // node probe / reconciliation / mkdir / inspect: empty, exit 0 → the
-    // documented stub/no-op paths (probe: no marker; reconcile: no candidate).
+    if (command.includes("scontrol show node")) return { stdout: "NODE_PROBE=NodeName=gpu04 CPUAlloc=0 CPUTot=64 State=IDLE CfgTRES=cpu=64,gres/gpu=8 AllocTRES=cpu=0,gres/gpu=0\n", stderr: "", exitCode: 0 };
+    // reconciliation / mkdir / inspect stubs return an empty successful result.
     return { stdout: "", stderr: "", exitCode: 0 };
   };
 }

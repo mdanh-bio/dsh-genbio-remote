@@ -79,6 +79,16 @@ test("schema-v2 workflow submits one node per explicit execute or advance", asyn
   assert.equal(done.status.workflow_run.status, "completed");
 });
 
+test("durable workflow plan restores after session plan cache loss", async (t) => {
+  const fx = await fixture(t); const h = harness(fx);
+  const planned = await h.tools.planTool.execute({ workflow: "pipeline" }, h.exec);
+  const started = await h.tools.executeTool.execute({ plan_hash: planned.status.workflow_plan.workflow_plan_hash }, h.exec);
+  h.state.workflowPlans = [];
+  const status = await h.tools.statusTool.execute({ workflow_run_id: started.status.workflow_run.workflow_run_id }, h.exec);
+  assert.equal(status.status.workflow_run.nodes.find((node) => node.node_id === "prepare").status, "completed");
+  assert.equal(h.state.workflowPlans.length, 1);
+});
+
 test("unknown workflow plan and drift fail before submission", async (t) => {
   const fx = await fixture(t); const h = harness(fx);
   await assert.rejects(h.tools.executeTool.execute({ plan_hash: "f".repeat(64) }, h.exec), /unknown or expired/u);

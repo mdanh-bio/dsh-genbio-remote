@@ -40,7 +40,7 @@ test("records persist atomically and expose only the allowlisted lifecycle shape
   assert.equal(stored.nodes[0].status, "ready");
   const disk = JSON.parse(await readFile(join(dir, SESSION, "workflows.json"), "utf8"));
   assert.equal(disk.schema, "genbio-workflow-registry/1");
-  assert.deepEqual(Object.keys(disk.records[0]).sort(), ["createdAt", "finishedAt", "nodes", "status", "updatedAt", "workflow", "workflowPlanHash", "workflowRunId"].sort());
+  assert.deepEqual(Object.keys(disk.records[0]).sort(), ["createdAt", "finishedAt", "nodeRecords", "nodes", "status", "updatedAt", "workflow", "workflowOrigin", "workflowPath", "workflowPlan", "workflowPlanHash", "workflowRunId", "workflowSha", "workspace"].sort());
   const text = JSON.stringify(disk);
   for (const forbidden of ["stdout", "stderr", "token", "parameters", "/remote/path"]) assert.equal(text.includes(forbidden), false);
   assert.deepEqual((await createWorkflowRegistry(dir).list(SESSION))[0], stored);

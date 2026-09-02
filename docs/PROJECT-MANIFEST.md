@@ -60,4 +60,4 @@ genbio_project_cancel
 genbio_project_fetch
 ```
 
-Execution fresh-reads the same source and rejects workspace changes, source changes, manifest drift, policy drift, wrapper drift, or plan-hash drift before staging or submission.
+Planning securely reads every declared package file and includes the canonical `packageSha` in `genbio-plan/2`. Execution rebuilds that inventory, rejects byte drift, snapshots approved files through no-follow handles, persists a durable attempt, creates `<remote_root>/runs/<attempt-id>` fresh, and stages only the private snapshot. `genbio_project_execute` returns a durable `run_id`; use it for restart-safe status and allowlisted fetch. Fetch now requires `project`, `run_id`, and optional `files`.

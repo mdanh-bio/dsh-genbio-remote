@@ -30,11 +30,9 @@ test("probe fails closed on insufficient headroom", async () => {
   await assert.rejects(probe(`NODE_PROBE=${record({ allocGpu: 8 })}\n`, { gpus: 1 }), /GPU headroom/u);
 });
 
-test("mixed nodes without GPU allocation TRES defer availability to sbatch", async () => {
+test("mixed nodes without GPU allocation TRES fail closed", async () => {
   const liveStyle = record().replace("CfgTRES=cpu=192,mem=515115M,billing=192,gres/gpu=8", "Gres=gpu:rtx5000:8 CfgTRES=cpu=192,mem=515115M,billing=192").replace("AllocTRES=cpu=64,gres/gpu=4", "AllocTRES=cpu=64");
-  const result = await probe(`NODE_PROBE=${liveStyle}\n`);
-  assert.equal(result.ok, true);
-  assert.match(result.note, /free_gpus=scheduler-authority/u);
+  await assert.rejects(probe(`NODE_PROBE=${liveStyle}\n`), /incomplete allocated-GPU evidence/u);
 });
 
 test("probe fails closed on missing, wrong, or malformed node evidence", async () => {
@@ -49,12 +47,8 @@ test("probe fails closed on nonzero exit", async () => {
   await assert.rejects(probe("", { exitCode: 1, stderr: "scontrol: command not found" }), /probe failed/u);
 });
 
-test("probe treats marker-less output as a stub/no-op", async () => {
-  for (const stdout of ["64a1b2 run.sbatch\n", ""]) {
-    const result = await probe(stdout);
-    assert.equal(result.ok, true);
-    assert.match(result.note, /stub\/no-op/u);
-  }
+test("probe fails closed when the structured marker is missing", async () => {
+  for (const stdout of ["64a1b2 run.sbatch\n", ""]) await assert.rejects(probe(stdout), /missing NODE_PROBE marker/u);
 });
 
 test("probe rejects invalid requested resources", async () => {
@@ -64,7 +58,7 @@ test("probe rejects invalid requested resources", async () => {
 });
 
 test("probe requires a target node", async () => {
-  await assert.rejects(probeNodeHeadroom({ exec: {}, runRemote: async () => ({ stdout: "", exitCode: 0 }), cpus: 4, gpus: 1, node: "" }), /requires a target node/u);
+  await assert.rejects(probeNodeHeadroom({ exec: {}, runRemote: async () => ({ stdout: "", exitCode: 0 }), cpus: 4, gpus: 1, node: "" }), /requires a safe target node/u);
 });
 
 test("probe issues exactly one bounded read-only remote call and never invokes sbatch", async () => {

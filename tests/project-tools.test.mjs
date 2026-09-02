@@ -29,6 +29,8 @@ async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), "project-tools-"));
   const projectsDir = join(root, "projects");
   await mkdir(projectsDir);
+  await mkdir(join(root, "local", "scripts"), { recursive: true });
+  await writeFile(join(root, "local", "scripts", "run.sh"), "#!/bin/bash\ntrue\n");
   t.after(() => rm(root, { recursive: true, force: true }));
   const manifest = `schema_version: 2
 project: demo

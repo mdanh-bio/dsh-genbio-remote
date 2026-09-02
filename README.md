@@ -6,8 +6,9 @@ Private DeepSeek Harness plugin for policy-controlled remote scientific computin
 
 - Mandatory schema-v2 project and workflow manifests with typed recipe operations
 - Policy and session resource-envelope validation
-- SHA-256-bound staging with rclone over SFTP
-- Exact-once Slurm submission with ambiguity reconciliation
+- Package-content-bound plans and no-follow private staging snapshots
+- Fresh run-scoped remote directories with SHA-256-bound rclone/SFTP staging
+- Durable exact-once Slurm attempts with ambiguity reconciliation across restart
 - Independent helper and workload lifecycle tracking
 - Dual-source `squeue` and `sacct` evidence
 - Bounded Slurm discovery and pending-job diagnosis
@@ -25,18 +26,17 @@ See `docs/PROJECT-MANIFEST.md`, `docs/WORKFLOWS.md`, and `docs/INSTALL.md`.
 
 The preferred lifecycle is:
 
-1. Describe and inventory a declared project.
-2. Resolve an immutable execution plan.
+1. Describe and securely inventory a declared project.
+2. Resolve a plan whose hash binds policy, manifest, wrapper, parameters, and package bytes.
 3. Validate target policy, cluster readiness, and the resource envelope.
-4. Stage and checksum-verify the package.
-5. Submit once through `sbatch`.
-6. Track the Slurm workload separately from the submission helper.
-7. Reconcile scheduler accounting with job-owned output evidence.
-8. Fetch allowlisted artifacts and finalize the run record.
+4. Persist a durable attempt and fresh remote run directory before dispatch.
+5. Stage an immutable private snapshot and submit at most one `sbatch` for the attempt.
+6. Reconcile identity-bound scheduler accounting with job-owned output evidence.
+7. Fetch allowlisted artifacts by durable `run_id` and finalize the run record.
 
 ## Local configuration
 
-`cordis.patch.yml` contains installation-specific paths and rclone remote names. Review it before installing the plugin on another workstation. Cluster policy and per-project manifests remain external configuration and are not embedded as credentials in this repository.
+Use `cordis.patch.example.yml` for installation-specific paths, workflow/execution registry roots, and simple rclone aliases. The active `cordis.patch.yml` is intentionally excluded from package contents. Cluster policy, manifests, credentials, and rclone configuration remain external.
 
 ## Validation
 

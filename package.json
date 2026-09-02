@@ -1,6 +1,6 @@
 {
   "name": "dsh-genbio-remote",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Policy-enforced DSH plugin for declarative, exact-once Slurm remote compute with workload evidence and controlled workflows.",
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,9 @@
     "./project-tools": "./lib/project-tools.js",
     "./project-source": "./lib/project-source.js",
     "./execution-core": "./lib/execution-core.js",
+    "./execution-registry": "./lib/execution-registry.js",
+    "./secure-package": "./lib/secure-package.js",
+    "./scheduler-evidence": "./lib/scheduler-evidence.js",
     "./workflow": "./lib/workflow.js",
     "./workflow-tools": "./lib/workflow-tools.js",
     "./workflow-registry": "./lib/workflow-registry.js",
@@ -28,12 +31,11 @@
     "tests",
     "README.md",
     "CHANGELOG.md",
-    "cordis.patch.example.yml",
-    "cordis.patch.yml"
+    "cordis.patch.example.yml"
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs && node tests/runtime-smoke.mjs",
-    "check:syntax": "node --check lib/aggregate.js && node --check lib/client.js && node --check lib/index.js && node --check lib/inventory.js && node --check lib/openviking.js && node --check lib/execution-core.js && node --check lib/project-status-tools.js && node --check lib/project-tools.js && node --check lib/project.js && node --check lib/project-source.js && node --check lib/slurm-discovery.js && node --check lib/slurm-policy.js && node --check lib/transfer.js && node --check lib/workflow-registry.js && node --check lib/workflow-tools.js && node --check lib/workflow.js",
+    "check:syntax": "node --check lib/aggregate.js && node --check lib/atomic-store.js && node --check lib/client.js && node --check lib/index.js && node --check lib/inventory.js && node --check lib/openviking.js && node --check lib/execution-core.js && node --check lib/execution-registry.js && node --check lib/project-status-tools.js && node --check lib/project-tools.js && node --check lib/project.js && node --check lib/project-source.js && node --check lib/scheduler-evidence.js && node --check lib/secure-package.js && node --check lib/slurm-discovery.js && node --check lib/slurm-policy.js && node --check lib/transfer.js && node --check lib/workflow-registry.js && node --check lib/workflow-tools.js && node --check lib/workflow.js",
     "check": "npm run check:syntax && npm test"
   },
   "engines": {

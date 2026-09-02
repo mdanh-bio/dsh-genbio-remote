@@ -15,14 +15,16 @@ function makeRunRemote(script) {
 
 try {
   // ── Target → remote resolution ──
-  assert.deepEqual(DEFAULT_RCLONE_REMOTE, { HPC: "hpc", genbioh100: "genbioh100", genbio_mdanh: "genbio01" });
+  assert.deepEqual(DEFAULT_RCLONE_REMOTE, { HPC: "hpc", NHPC: "nhpc", genbioh100: "genbioh100", genbio_mdanh: "genbio01" });
   assert.equal(resolveRcloneRemote({}, "HPC"), "hpc");
   assert.equal(resolveRcloneRemote(undefined, "HPC"), "hpc");
   assert.equal(resolveRcloneRemote({}, "genbioh100"), "genbioh100");
   assert.equal(resolveRcloneRemote({}, "genbio_mdanh"), "genbio01", "genbio01 was retargeted by the owner to user mdanh (2026-08-24 evening)");
   assert.equal(resolveRcloneRemote({ rcloneRemote: { HPC: "hpc-alt" } }, "HPC"), "hpc-alt", "config override must win over the default map");
-  assert.throws(() => resolveRcloneRemote({}, "unknown_target"), /no rclone remote configured for target unknown_target/u, "unmapped targets must fail closed");
-  assert.throws(() => resolveRcloneRemote({ rcloneRemote: { unknown_target: "" } }, "unknown_target"), /no rclone remote configured/u, "empty override must fall through to fail-closed");
+  assert.throws(() => resolveRcloneRemote({}, "unknown_target"), /must be a simple configured alias/u, "unmapped targets must fail closed");
+  assert.throws(() => resolveRcloneRemote({ rcloneRemote: { HPC: "sftp:/evil" } }, "HPC"), /simple configured alias/u);
+  assert.equal(resolveRcloneRemote({ rcloneRemote: { HPC: "hpc" } }, "HPC", { targets: { HPC: { transfer: { rclone_remote: "hpc" } } } }), "hpc");
+  assert.throws(() => resolveRcloneRemote({ rcloneRemote: { HPC: "hpc-alt" } }, "HPC", { targets: { HPC: { transfer: { rclone_remote: "hpc" } } } }), /does not match policy-bound/u);
 
   // ── copyto command construction ──
   assert.deepEqual(RCLONE_TRANSFER_ARGS, ["--retries", "2", "--low-level-retries", "2", "--contimeout", "20s"]);
