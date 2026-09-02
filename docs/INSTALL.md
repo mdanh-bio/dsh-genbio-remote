@@ -3,6 +3,7 @@
 ## Requirements
 
 - DeepSeek Harness Desktop compatible with the `0.1.1-rc.2` DSH package line.
+- Separate local directories for the workflow and execution registries; the plugin creates them mode `0700`.
 - Node.js 22 or newer for repository validation.
 - A separately maintained Genbio compute policy.
 - Native OpenSSH aliases and rclone SFTP remotes defined outside this repository.
@@ -31,6 +32,6 @@ Deployment into DSH Desktop is a separate consequential operation. Review the ta
 3. Validate a clean checkout with `npm ci --ignore-scripts && npm run check`.
 4. Verify GitHub Actions succeeds.
 5. Update `CHANGELOG.md` and the package version.
-6. Create a signed/reviewed tag such as `v0.2.0`.
+6. Create a signed/reviewed tag such as `v0.3.0`.
 7. Create the private GitHub release.
 8. Request separate approval before installing or running remote tests.

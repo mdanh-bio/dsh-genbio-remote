@@ -10,6 +10,7 @@
         memoryMode: manual
         projectsDir: /absolute/path/to/central-genbio-projects
         workflowRegistryDir: /absolute/path/to/genbio-workflow-registry
+        executionRegistryDir: /absolute/path/to/genbio-execution-registry
         rcloneRemote:
           HPC: your-hpc-rclone-remote
           NHPC: your-nhpc-rclone-remote

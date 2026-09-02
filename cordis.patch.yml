@@ -11,12 +11,14 @@
         memoryMode: manual
         projectsDir: /Users/mdanh/.dsh/profiles/desktop/genbio-projects
         workflowRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-workflow-registry
+        executionRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-execution-registry
         # Global transfer policy (2026-08-24): all data transfers use rclone
         # (SFTP) — never scp. Target→rclone-remote map. genbio01 was
         # retargeted by the owner to user `mdanh` (2026-08-24 evening), so it
         # is the correct remote for genbio_mdanh.
         rcloneRemote:
           HPC: hpc
+          NHPC: nhpc
           genbioh100: genbioh100
           genbio_mdanh: genbio01
 

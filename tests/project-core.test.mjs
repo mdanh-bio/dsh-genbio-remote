@@ -54,6 +54,7 @@ test("schema v2 rejects arbitrary shell surfaces and unsafe recipes", () => {
   assert.throws(() => manifest({ jobs: { prepare: { cpus: 4, recipe: { name: "x", script: "scripts/run.sh", run: "rm -rf /" } } } }), /unknown field run/u);
   assert.throws(() => manifest({ jobs: { prepare: { cpus: 4, recipe: { name: "x", script: "missing.sh", argv: [] } } } }), /included in files/u);
   assert.throws(() => manifest({ python_bin: "/evil/python" }), /unknown field python_bin/u);
+  assert.throws(() => manifest({ remote_root: "/tmp/evil';touch-pwned;'" }), /shell-inert absolute path/u);
   assert.throws(() => manifest({ workflows: {} }), /unknown field workflows/u);
   assert.throws(() => manifest({ files: ["scripts/run.sh", "scripts/run.sh"] }), /duplicate/u);
 });
@@ -113,7 +114,10 @@ test("canonical plan hashes are key-order stable and material-change sensitive",
   assert.notEqual(planHashOf({ a: 1 }), planHashOf({ a: 2 }));
   const parsed = manifest();
   const resolution = resolveRecipe({ manifest: parsed, operation: "prepare", parameters: { arm: "ext 100", count: 4, input: "inputs/base.dat" }, policy, envelope });
-  const built = buildOperationPlan({ project: "demo", operation: "prepare", policyHash: "a".repeat(64), manifestSha: "b".repeat(64), resolution });
+  const built = buildOperationPlan({ project: "demo", operation: "prepare", policyHash: "a".repeat(64), manifestSha: "b".repeat(64), packageSha: "c".repeat(64), resolution });
   assert.equal(built.planHash, planHashOf(built.plan));
+  assert.equal(built.plan.schema, "genbio-plan/2");
+  assert.equal(built.plan.target, "HPC");
+  assert.equal(built.plan.packageSha, "c".repeat(64));
   assert.equal(Object.isFrozen(built.plan), true);
 });

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { createWorkflowTools } from "../lib/workflow-tools.js";
+import { createWorkflowRegistry } from "../lib/workflow-registry.js";
 
 const policyHash = "a".repeat(64);
 const policy = { targets: { HPC: { test_gate: { real_submission: "gpu04" }, allowlist: { gpu04: { partition: "gpus" } }, environment: { recipe_envs: {} } } } };
@@ -59,6 +60,7 @@ function harness(projectsDir, workspace) {
     requireState: () => state,
     publicState: (current) => ({ policy: current.policy, runs: current.runs }),
     config: { projectsDir },
+    workflowRegistry: createWorkflowRegistry(join(workspace, ".test-workflow-registry")),
   });
   return { tools, state, exec };
 }

@@ -24,7 +24,7 @@ nodes:
     depends_on: [simulate]
 ```
 
-Each node resolves to an immutable schema-v2 operation plan. The workflow hash covers workflow bytes, policy, node plans, parameters, dependencies, and project source origin.
+Each node resolves to an immutable schema-v2 operation plan whose hash also binds the package bytes. Submitted nodes persist the durable project `run_id`, allowing workflow status to reconcile the project attempt before or after a Slurm job ID becomes available.
 
 ## Deliberately controlled progression
 
@@ -37,4 +37,4 @@ Each node resolves to an immutable schema-v2 operation plan. The workflow hash c
 
 A dependency is complete only after Slurm reports `COMPLETED`, exit `0:0`, and job-owned output/provenance evidence is present. Ambiguous submission is `unknown/reconciling` and is never automatically retried.
 
-Schema-v1 workflows remain read-only informational planners using an explicit `completed` set. Only schema-v2 workflows enter durable execution.
+Schema-v1 workflows are rejected. Only schema-v2 workflows can be planned or executed.
