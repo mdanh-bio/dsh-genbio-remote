@@ -35,6 +35,7 @@ test("probe fails closed on missing, wrong, or malformed node evidence", async (
   await assert.rejects(probe(`NODE_PROBE=${record({ node: "gpu03" })}\n`), /unparseable/u);
   await assert.rejects(probe("NODE_PROBE=garbage\n"), /unparseable/u);
   await assert.rejects(probe(`NODE_PROBE=${record().replace("CPUTot=192", "CPUTot=xx")}\n`), /non-numeric/u);
+  await assert.rejects(probe(`NODE_PROBE=${record().replace("CfgTRES=cpu=192,mem=515115M,billing=192,gres/gpu=8", "CfgTRES=cpu=192")}\n`), /CPU\/GPU resources/u);
 });
 
 test("probe fails closed on nonzero exit", async () => {
