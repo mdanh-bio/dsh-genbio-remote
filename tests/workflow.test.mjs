@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseWorkflow, planWorkflow, MAX_WORKFLOW_NODES } from "../lib/workflow.js";
+import { parseWorkflow, planWorkflow, workflowPlanHashOf, MAX_WORKFLOW_NODES, MAX_WORKFLOW_PARAMETERS_BYTES } from "../lib/workflow.js";
 
 function definition(overrides = {}) {
   return {
@@ -137,7 +137,7 @@ test("cycles, self-dependencies, and unknown dependencies are rejected", () => {
 
 test("schema strictness: unknown fields, unsafe names, duplicates, bounds", () => {
   assert.throws(() => parseWorkflow(definition({ extra: 1 })), /unknown field extra/u);
-  assert.throws(() => parseWorkflow(definition({ schema_version: 2 })), /schema_version must be 1/u);
+  assert.throws(() => parseWorkflow(definition({ schema_version: 3 })), /schema_version must be 1 or 2/u);
   assert.throws(() => parseWorkflow(definition({ name: "pipeline" })), /unknown field name/u);
   assert.throws(() => parseWorkflow({ schema_version: 1, workflow: "pipeline", nodes: [] }), /1..32 nodes/u);
   const many = { schema_version: 1, workflow: "big", nodes: Array.from({ length: MAX_WORKFLOW_NODES + 1 }, (_, index) => ({ id: `n${index}`, project: "demo", operation: `op${index}` })) };
@@ -192,4 +192,58 @@ test("planning is pure: no mutation of the workflow, no side effects", async () 
   await planWorkflow(workflow, { resolveProject });
   await planWorkflow(workflow, { resolveProject, completed: ["prepare"] });
   assert.equal(JSON.stringify(workflow), before, "the parsed workflow is never mutated by planning");
+});
+
+test("schema v2 accepts bounded plain parameters while v1 remains strict", () => {
+  const workflow = parseWorkflow({
+    schema_version: 2,
+    workflow: "parameterized",
+    nodes: [{ id: "run", project: "demo", operation: "run", parameters: { seed: 7, flags: ["fast", true], nested: { mode: "safe" } } }],
+  });
+  assert.equal(workflow.schema, "genbio-workflow/2");
+  assert.deepEqual(workflow.nodes[0].parameters, { seed: 7, flags: ["fast", true], nested: { mode: "safe" } });
+  assert.equal(Object.isFrozen(workflow.nodes[0].parameters.nested), true);
+  assert.throws(() => parseWorkflow({ schema_version: 1, workflow: "old", nodes: [{ id: "run", project: "demo", operation: "run", parameters: {} }] }), /unknown field parameters/u);
+  assert.throws(() => parseWorkflow({ schema_version: 2, workflow: "bad", nodes: [{ id: "run", project: "demo", operation: "run", parameters: { float: 1.5 } }] }), /safe integers/u);
+  assert.throws(() => parseWorkflow({ schema_version: 2, workflow: "bad", nodes: [{ id: "run", project: "demo", operation: "run", parameters: { Bad_Key: 1 } }] }), /unsafe key/u);
+  assert.throws(() => parseWorkflow({ schema_version: 2, workflow: "big", nodes: [{ id: "run", project: "demo", operation: "run", parameters: { text: "x".repeat(MAX_WORKFLOW_PARAMETERS_BYTES + 1) } }] }), /exceeds/u);
+});
+
+test("schema-v2 plans resolve immutable operation identities and hash canonically", async () => {
+  const workflow = parseWorkflow({
+    schema_version: 2,
+    workflow: "resolved",
+    nodes: [
+      { id: "prepare", project: "demo", operation: "prepare", parameters: { count: 2 } },
+      { id: "run", project: "demo", operation: "run", depends_on: ["prepare"], parameters: { mode: "fast" } },
+    ],
+  });
+  const hashes = { prepare: "a".repeat(64), run: "b".repeat(64) };
+  const calls = [];
+  const resolveOperation = async (input) => {
+    calls.push(input);
+    return { planHash: hashes[input.operation], resources: { gpus: input.operation === "run" ? 1 : 0, cpus: 4, concurrency: 1 }, origin: `project:${input.project}` };
+  };
+  const first = await planWorkflow(workflow, { resolveOperation });
+  const second = await planWorkflow(workflow, { resolveOperation, completed: ["prepare"] });
+  assert.equal(first.schema, "genbio-workflow-plan/2");
+  assert.match(first.workflow_plan_hash, /^[a-f0-9]{64}$/u);
+  assert.equal(first.workflow_plan_hash, second.workflow_plan_hash, "readiness/completion state is excluded from immutable plan identity");
+  assert.deepEqual(first.nodes[0].parameters, { count: 2 });
+  assert.equal(first.nodes[1].operation_plan_hash, hashes.run);
+  assert.deepEqual(first.nodes[1].resources, { cpus: 4, gpus: 1, concurrency: 1 });
+  assert.equal(first.nodes[1].origin, "project:demo");
+  assert.deepEqual(calls[0], { project: "demo", operation: "prepare", parameters: { count: 2 }, nodeId: "prepare" });
+
+  const reorderedResources = await planWorkflow(workflow, { resolveOperation: async (input) => ({ origin: `project:${input.project}`, resources: { concurrency: 1, cpus: 4, gpus: input.operation === "run" ? 1 : 0 }, plan_hash: hashes[input.operation] }) });
+  assert.equal(reorderedResources.workflow_plan_hash, first.workflow_plan_hash, "canonical hashing ignores mapping insertion order");
+  assert.notEqual(workflowPlanHashOf({ a: 1 }), workflowPlanHashOf({ a: 2 }));
+});
+
+test("schema-v2 resolution fails closed on missing or malformed identity metadata", async () => {
+  const workflow = parseWorkflow({ schema_version: 2, workflow: "resolved", nodes: [{ id: "run", project: "demo", operation: "run" }] });
+  await assert.rejects(planWorkflow(workflow, { resolveProject }), /requires resolveOperation/u);
+  await assert.rejects(planWorkflow(workflow, { resolveOperation: async () => ({ planHash: "short", resources: {}, origin: "local" }) }), /64-hex/u);
+  await assert.rejects(planWorkflow(workflow, { resolveOperation: async () => ({ planHash: "a".repeat(64), resources: { cpus: -1 }, origin: "local" }) }), /non-negative/u);
+  await assert.rejects(planWorkflow(workflow, { resolveOperation: async () => ({ planHash: "a".repeat(64), resources: {}, origin: "local", raw: "forbidden" }) }), /unknown field raw/u);
 });

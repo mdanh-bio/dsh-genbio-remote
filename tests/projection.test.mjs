@@ -6,7 +6,7 @@ const { projectionKey, projectionApply, projectionInit, projectionView } = bundl
 assert.equal(projectionKey, "genbio/remote");
 
 let state = projectionInit();
-assert.deepEqual(state, { calls: {}, envelope: null, runs: [], projects: [], projects_status: [] });
+assert.deepEqual(state, { calls: {}, envelope: null, runs: [], projects: [], projects_status: [], workflows: [] });
 
 // A genbio tool call is paired by callId.
 state = projectionApply(state, { type: "tool/call", seq: 1, time: 0, data: { callId: "c1", name: "genbio_set_envelope", arguments: "{}" } });
@@ -91,7 +91,7 @@ assert.equal(JSON.stringify(state.projects).includes("b".repeat(64)), false);
 
 // The view exposes only narrowed client state.
 const view = projectionView(state);
-assert.deepEqual(Object.keys(view).sort(), ["envelope", "projects", "projects_status", "runs"]);
+assert.deepEqual(Object.keys(view).sort(), ["envelope", "projects", "projects_status", "runs", "workflows"]);
 assert.equal(view.envelope.maxCpus, 16);
 assert.deepEqual(view.runs, []);
 assert.deepEqual(view.projects_status, []);
@@ -119,5 +119,11 @@ assert.deepEqual(state.projects_status[0].run_counts, { active: 1, completed: 2,
 assert.deepEqual(state.projects_status[0].plans[0], { operation: "run", status: "planned", plan_hash: "a".repeat(12), created_at: 1 });
 assert.deepEqual(state.projects_status[0].operations[0], { name: "run", form: "recipe", cpus: 4, gpus: 1, concurrency: 1 });
 assert.deepEqual(state.projects_status[0].runs[0], { run_id: "r1", operation: "run", status: "completed", target: "HPC", started_at: 1, finished_at: 2 });
+
+state = projectionApply(state, { type: "tool/call", seq: 19, time: 0, data: { callId: "w1", name: "genbio_workflow_status", arguments: "{}" } });
+state = projectionApply(state, resultEvent("w1", { workflow_run: { workflow_run_id: "wr-1", workflow: "pipeline", plan_hash: "f".repeat(64), status: "running", counts: { ready: 0, active: 1, completed: 1, secret: { raw: true } }, nodes: [{ node_id: "run", project: "demo", operation: "run", status: "running", job_id: "1234", slurm_state: "RUNNING", depends_on: ["prepare"], parameters: { secret: true }, wrapper: "raw" }] } }, 20));
+assert.deepEqual(state.workflows[0], { workflow_run_id: "wr-1", workflow: "pipeline", status: "running", nodes: [{ node_id: "run", project: "demo", operation: "run", status: "running", job_id: "1234", slurm_state: "RUNNING", depends_on: ["prepare"] }], counts: { ready: 0, active: 1, completed: 1 } });
+assert.equal(JSON.stringify(state.workflows).includes("secret"), false);
+assert.equal(JSON.stringify(state.workflows).includes("raw"), false);
 
 console.log("projection fold passed: narrowed envelope/runs/projects/projects_status (incl. nested fields), privacy, empty updates, and no-op discipline");

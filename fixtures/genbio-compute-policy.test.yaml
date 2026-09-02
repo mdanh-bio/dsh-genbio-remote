@@ -1,0 +1,292 @@
+schema_version: 1
+policy: genbio-remote-compute
+updated: 2026-09-02
+defaults:
+  on_fail: stop
+  log_max_bytes: 65536
+  log_tail_lines: 200
+
+ssh:
+  client: openssh-native
+  noninteractive: true
+  options:
+    tty: false
+    batch_mode: true
+    connect_timeout_s: 10
+    strict_host_key_checking: 'yes'
+    agent_forwarding: false
+    x11_forwarding: false
+    port_forwarding: false
+  prohibited:
+    - StrictHostKeyChecking=no
+    - StrictHostKeyChecking=accept-new
+    - UserKnownHostsFile=/dev/null
+    - password-fallback
+    - daemon-mode
+    - agent-forwarding
+    - weaker-retry
+    - alias-swap
+  host_key_mismatch: hard-fail
+  credentials: do-not-touch
+
+shared_checks:
+  - id: global.ssh-contract
+    phase: all
+    kind: ssh-options
+    rule: strict-native-openssh
+  - id: global.single-target
+    phase: all
+    kind: session-invariant
+    rule:
+      one_exact_ssh_target_per_session: true
+      target_switch_starts_new_envelope: true
+  - id: global.fresh-run-dir
+    phase: stage
+    kind: file-state
+    rule:
+      must_not_exist_before_launch: true
+      overwrite: false
+  - id: global.approval-gates
+    phase: all
+    kind: approval-gate
+    rule:
+      separate_approval:
+        - clone
+        - download
+        - install
+        - compile
+        - material-transfer-in
+        - material-transfer-out
+  - id: global.manifest
+    phase: post
+    kind: evidence
+    rule:
+      target_enum: [HPC, NHPC, genbio_mdanh, genbioh100]
+      ok_requires:
+        - all-declared-files-present
+        - checksums-match
+        - terminal-evidence-successful
+
+targets:
+  HPC:
+    ssh_target: HPC
+    surface: slurm
+    scheduler: slurm
+    allowlist:
+      gpu04:
+        partition: gpus
+        workload: [gpu, approved-cpu-only]
+        caps:
+          max_concurrent_gpu_jobs: 4
+      cpu01:
+        partition: cpus
+        workload: [cpu-only]
+        caps:
+          max_gpus: 0
+      forbidden_nodes: [gpu01, gpu02]
+    envelope:
+      fields: [node, partition, node_count, max_cpus, max_gpus]
+      node_count: 1
+      omitted_directives: [account, time, time-min, mem, mem-per-cpu, mem-per-gpu, exclusive]
+      gpu_directive_form: gres=gpu:N
+      carry_across_sessions: false
+    test_gate:
+      real_submission: gpu04
+      forbidden_real_submission_nodes: [cpu01]
+    checks:
+      - id: hpc.single-node
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: nodes, constraint: equals, value: 1}
+      - id: hpc.node-allowlist
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: nodelist, constraint: in, values: [gpu04, cpu01], form: single-literal}
+      - id: hpc.partition-match
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: partition, constraint: map, map: allowlist.*.partition}
+      - id: hpc.forbidden-directives
+        phase: validate
+        kind: sbatch-directive
+        rule: {constraint: absent, directives: [account, time, time-min, mem, mem-per-cpu, mem-per-gpu, exclusive]}
+      - id: hpc.strict-shell
+        phase: validate
+        kind: sbatch-body
+        rule: {require: ['set -euo pipefail', 'cd "$SLURM_SUBMIT_DIR"']}
+      - id: hpc.no-nested-alloc
+        phase: validate
+        kind: sbatch-body
+        rule: {forbid_tokens: [sbatch, salloc], srun_forbid: resource-changing-flags}
+      - id: hpc.live-state
+        phase: [preflight, pre-submit]
+        kind: probe
+        rule: {assert: [selected-node-alive, not-drained, not-down, headroom>=proposed]}
+      - id: hpc.envelope-fit
+        phase: [validate, pre-submit]
+        kind: num-cap
+        rule: {expr: used+proposed, caps: envelope.max_*}
+      - id: hpc.no-retry-ambiguous
+        phase: submit
+        kind: session-invariant
+        rule: {resubmit_only_after: scheduler-evidence-no-job-created}
+      - id: hpc.terminal-evidence
+        phase: post
+        kind: evidence
+        rule: {scheduler: COMPLETED, exit_code: '0:0'}
+
+  NHPC:
+    ssh_target: NHPC
+    surface: slurm
+    scheduler: slurm
+    allowlist:
+      gpu01:
+        partition: gpu
+        workload: [gpu, approved-cpu-only]
+        caps:
+          max_aggregate_cpus: 80
+          max_aggregate_gpus: 4
+          max_concurrent_gpu_jobs: 4
+      forbidden_nodes: []
+    envelope:
+      fields: [node, partition, node_count, max_cpus, max_gpus]
+      node_count: 1
+      omitted_directives: [account, time, time-min, mem, mem-per-cpu, mem-per-gpu, exclusive]
+      gpu_directive_form: gres=gpu:N
+      carry_across_sessions: false
+    test_gate:
+      real_submission: gpu01
+      smoke_root: /tmp/dsh-genbio-nhpc-smoke
+      forbidden_real_submission_nodes: []
+    checks:
+      - id: nhpc.single-node
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: nodes, constraint: equals, value: 1}
+      - id: nhpc.node-allowlist
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: nodelist, constraint: in, values: [gpu01], form: single-literal}
+      - id: nhpc.partition-match
+        phase: validate
+        kind: sbatch-directive
+        rule: {directive: partition, constraint: map, map: allowlist.*.partition}
+      - id: nhpc.forbidden-directives
+        phase: validate
+        kind: sbatch-directive
+        rule: {constraint: absent, directives: [account, time, time-min, mem, mem-per-cpu, mem-per-gpu, exclusive]}
+      - id: nhpc.strict-shell
+        phase: validate
+        kind: sbatch-body
+        rule: {require: ['set -euo pipefail', 'cd "$SLURM_SUBMIT_DIR"']}
+      - id: nhpc.no-nested-alloc
+        phase: validate
+        kind: sbatch-body
+        rule: {forbid_tokens: [sbatch, salloc], srun_forbid: resource-changing-flags}
+      - id: nhpc.live-state
+        phase: [preflight, pre-submit]
+        kind: probe
+        rule: {assert: [selected-node-alive, not-drained, not-down, headroom>=proposed]}
+      - id: nhpc.envelope-fit
+        phase: [validate, pre-submit]
+        kind: num-cap
+        rule: {expr: used+proposed, caps: envelope.max_*}
+      - id: nhpc.no-retry-ambiguous
+        phase: submit
+        kind: session-invariant
+        rule: {resubmit_only_after: scheduler-evidence-no-job-created}
+      - id: nhpc.terminal-evidence
+        phase: post
+        kind: evidence
+        rule: {scheduler: COMPLETED, exit_code: '0:0'}
+
+  genbio_mdanh:
+    ssh_target: genbio_mdanh
+    surface: direct
+    scheduler: null
+    legacy_aliases: [genbio]
+    envelope:
+      fields: [run_dir, cpus, gpus, concurrency, success_criteria]
+      reuse_prior_choice: false
+    checks:
+      - id: mdanh.legacy-alias
+        phase: all
+        kind: session-invariant
+        rule: {alias: genbio, action: reject-or-remap-with-confirmation}
+      - id: mdanh.preflight-resources
+        phase: preflight
+        kind: probe
+        rule: {commands: ['nproc', 'free -h', 'nvidia-smi -L when GPU work is expected']}
+      - id: mdanh.detached-launch
+        phase: submit
+        kind: launch-contract
+        rule: {setsid: true, stdin: /dev/null, pid_recorded: true, exit_code_file: true}
+      - id: mdanh.terminal-evidence
+        phase: post
+        kind: evidence
+        rule: {process_exit_code: 0}
+
+  genbioh100:
+    ssh_target: genbioh100
+    surface: direct
+    scheduler: null
+    login_shell: false
+    envelope:
+      fields: [workload_class, run_dir, gpu, cpu_threads, mem_gb, concurrency]
+      carry_across_sessions: false
+    hardware:
+      gpus: [0, 1]
+      reserved_gpu: 1
+      protected_process: gpu_util
+    limits:
+      gpus_allowed: [0]
+      cpu_threads_per_job: 16
+      mem_gb_per_job: 32
+      concurrent_gpu_jobs: 1
+      concurrent_cpu_jobs: 10  # owner-approved 2026-09-01 (CPU-only direct jobs; fail-closed default is 1)
+    environment:
+      conda: /home/work/GenbioLAB/miniconda3/etc/profile.d/conda.sh
+      gromacs_gpu: /home/work/GenbioLAB/common/gromacs-2026.3/gmxrc_gpu.sh
+      reset_omp_threads_after_gromacs_source: true
+      # Read-only tool roots: paths an operation may READ without a per-workspace
+      # grant (conda python, gromacs module). Data folders still require grants.
+      tool_roots:
+        - /home/work/GenbioLAB/miniconda3
+        - /home/work/GenbioLAB/common
+    test_gate:
+      must_complete_before: HPC.submit
+      smoke_gpu: 0
+      forbidden_gpu: 1
+    checks:
+      - id: gbh100.self-contained-command
+        phase: [validate, submit]
+        kind: command-contract
+        rule: {absolute_paths_only: true, login_shell: false, rc_file_dependence: false}
+      - id: gbh100.gpu0-only
+        phase: [validate, monitor]
+        kind: num-cap
+        rule: {field: CUDA_VISIBLE_DEVICES, allowed: [0]}
+      - id: gbh100.cpu-threads
+        phase: [validate, monitor]
+        kind: num-cap
+        rule: {field: OMP_NUM_THREADS, max: 16}
+      - id: gbh100.mem
+        phase: [validate, monitor]
+        kind: num-cap
+        rule: {field: process_rss_gb, max: 32}
+      - id: gbh100.one-render
+        phase: [validate, monitor]
+        kind: max-concurrent
+        rule: {workload_class: gpu-render, max: 1}
+      - id: gbh100.preserve-gpu1
+        phase: [preflight, monitor, post]
+        kind: baseline-drift
+        rule: {gpu: 1, protected_process: gpu_util, session_pids_on_gpu: forbidden}
+      - id: gbh100.detached-launch
+        phase: submit
+        kind: launch-contract
+        rule: {setsid: true, stdin: /dev/null, pid_recorded: true, exit_code_file: true}
+      - id: gbh100.terminal-evidence
+        phase: post
+        kind: evidence
+        rule: {process_exit_code: 0}

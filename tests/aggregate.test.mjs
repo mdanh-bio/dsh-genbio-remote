@@ -107,7 +107,7 @@ test("aggregateProjects bounds plans/runs and rejects malformed inputs", () => {
 
 test("projection init/view expose the aggregate surface and the fold narrows it", () => {
   let state = projectionInit();
-  assert.deepEqual(state, { calls: {}, envelope: null, runs: [], projects: [], projects_status: [] });
+  assert.deepEqual(state, { calls: {}, envelope: null, runs: [], projects: [], projects_status: [], workflows: [] });
   // A genbio_projects_status result carries rich projects + projects_status.
   const status = {
     envelope: null,
@@ -144,7 +144,7 @@ test("projection init/view expose the aggregate surface and the fold narrows it"
   assert.equal(Object.hasOwn(alpha, "last_activity_at"), true);
   assert.equal(JSON.stringify(state).includes("SECRET-BODY"), false);
   const view = projectionView(state);
-  assert.deepEqual(Object.keys(view).sort(), ["envelope", "projects", "projects_status", "runs"]);
+  assert.deepEqual(Object.keys(view).sort(), ["envelope", "projects", "projects_status", "runs", "workflows"]);
   // An empty aggregate update clears stale projects/persists the empty mirror.
   state = projectionApply(state, callEvent("c2", "genbio_projects_status", 3));
   state = projectionApply(state, resultEvent("c2", { ...status, projects: [], projects_status: [] }, 4));

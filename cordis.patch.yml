@@ -10,6 +10,8 @@
         logMaxBytes: 65536
         memoryMode: manual
         pinnedProjectsDir: /Users/mdanh/.dsh/profiles/desktop/genbio-pinned-projects
+        runRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-run-registry
+        workflowRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-workflow-registry
         # Global transfer policy (2026-08-24): all data transfers use rclone
         # (SFTP) — never scp. Target→rclone-remote map. genbio01 was
         # retargeted by the owner to user `mdanh` (2026-08-24 evening), so it

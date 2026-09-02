@@ -23,7 +23,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createProjectTools, loadProject } from "../lib/project-tools.js";
+import { createProjectTools } from "../lib/project-tools.js";
+import { createProjectSource } from "../lib/project-source.js";
 import { resolveRecipe } from "../lib/project.js";
 
 const POLICY_HASH = "a".repeat(64);
@@ -106,7 +107,7 @@ jobs:
 // Compute the FRESH re-resolution (what execution must use): the wrapper bytes,
 // the wrapper SHA, and the content-addressed wrapper path.
 async function freshWrapper(projectsDir, params = { count: 4 }) {
-  const loaded = await loadProject(projectsDir, "demo");
+  const loaded = await createProjectSource({ pinnedProjectsDir: projectsDir }).loadProject("demo", exec);
   const resolution = resolveRecipe({ manifest: loaded.manifest, operation: "run", parameters: params, policy, envelope });
   return { loaded, resolution, wrapperSha: resolution.bytesSha, shortHash: loaded.manifestSha.slice(0, 12), wrapperRel: `genbio-recipes/${loaded.manifestSha.slice(0, 12)}.run.sbatch` };
 }

@@ -19,7 +19,9 @@ The plugin deliberately does not expose a generic remote-command interface. Tran
 
 ## Project model
 
-New scientific projects should normally be configured with YAML manifests and project-owned scripts. Plugin source changes are intended only for reusable execution, policy, scheduler, or security capabilities.
+New scientific projects should normally use a workspace-root `genbio-project.yml` (or `.yaml`) plus project-owned scripts. The plugin discovers the manifest lazily and retains the configured central project directory as a compatibility fallback. Plugin source changes are intended only for reusable execution, policy, scheduler, or security capabilities.
+
+See `docs/PROJECT-MANIFEST.md`, `docs/WORKFLOWS.md`, and `docs/INSTALL.md`.
 
 The preferred lifecycle is:
 

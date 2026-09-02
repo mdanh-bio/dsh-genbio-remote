@@ -1,0 +1,20 @@
+schema_version: 2
+project: example
+local_root: /replace/with/active/workspace
+remote_root: /replace/with/approved/remote/root
+files:
+  - scripts/run.sh
+jobs:
+  run:
+    node: gpu04
+    cpus: 4
+    gpus: 1
+    concurrency: 1
+    recipe:
+      name: example-run
+      script: scripts/run.sh
+      parameters:
+        count: {type: integer, min: 1, max: 100}
+      argv:
+        - --count
+        - {param: count}

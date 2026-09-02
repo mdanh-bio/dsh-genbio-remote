@@ -9,7 +9,8 @@ import { createProjectTools, MAX_SESSION_PLANS } from "../lib/project-tools.js";
 const policyHash = "a".repeat(64);
 const policy = { targets: { HPC: { test_gate: { real_submission: "gpu04" }, allowlist: { gpu04: { partition: "gpus" } }, environment: { recipe_envs: {} } } } };
 const envelope = { target: "HPC", node: "gpu04", partition: "gpus", maxCpus: 8, maxGpus: 1, concurrency: 1 };
-const exec = { agent: { id: "p", session: { id: "p", header: { cwd: "/tmp" } } } };
+const execFor = (cwd) => ({ agent: { id: "p", session: { id: "p", header: { cwd } } } });
+const exec = execFor(tmpdir());
 
 function harness(projectsDir) {
   const hooks = { policy: 0, state: 0 };

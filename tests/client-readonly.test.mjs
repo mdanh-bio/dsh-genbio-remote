@@ -17,6 +17,9 @@ const REMOTE_ACTION_TOOLS = [
   "genbio_pinned_stage",
   "genbio_aizyme_stage",
   "genbio_project_execute",
+  "genbio_workflow_execute",
+  "genbio_workflow_advance",
+  "genbio_workflow_cancel",
   "genbio_finalize_run",
   "genbio_publish_run",
   "genbio_pinned_fetch",
@@ -35,7 +38,9 @@ test("client panel consumes the aggregate projection and is present as a bounded
   assert.match(clientSource, /"Projects"/u, "a Projects button must toggle the overlay");
   assert.match(clientSource, /projects_status/u, "the panel must read the aggregate mirror");
   assert.match(clientSource, /aria-label": "Genbio project selector"/u, "the project selector must exist");
-  assert.match(clientSource, /No execute or submit controls are exposed/u, "the panel must state it exposes no execute/submit controls");
+  assert.match(clientSource, /no execute, submit, or cancel control is exposed here/u, "the panel must state it exposes no consequential controls");
+  assert.match(clientSource, /Controlled workflows/u, "the panel must render bounded workflow state");
+  assert.match(clientSource, /HPC · NHPC/u, "the supported target copy includes NHPC");
   // Job rows inside the Details overlay are capped so a long job list stays bounded.
   assert.match(clientSource, /visibleJobs = relevant\.slice\(0, 10\)/u, "Details overlay must cap the rendered job rows");
 });

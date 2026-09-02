@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 
 const bundle = await import("../lib/index.js");
+const policyPath = path.resolve(import.meta.dirname, "../fixtures/genbio-compute-policy.test.yaml");
 const registered = [];
 const provided = new Map();
 const published = [];
@@ -46,7 +48,7 @@ const ctx = {
   effect(setup) { return setup(); },
 };
 await bundle.apply(ctx, {
-  policyPath: "/Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml",
+  policyPath,
   policyPollMs: 3600000,
   commandTimeoutMs: 30000,
   smokeTimeoutMs: 180000,
