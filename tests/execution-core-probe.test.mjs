@@ -16,7 +16,7 @@ const probe = (stdout, { exitCode = 0, stderr = "", cpus = 4, gpus = 1, commands
   probeNodeHeadroom({ exec: {}, runRemote: async (_target, command) => { commands.push(command); return { stdout, stderr, exitCode }; }, cpus, gpus, node });
 
 test("probe passes on a usable node with sufficient headroom", async () => {
-  for (const [line, cpus, gpus] of [["alloc|32|4|1|0", 4, 1], ["idle|32|0|1|0", 32, 0], ["mix|32|24|1|0", 8, 1], ["alloc|32|0|1|0", 32, 1]]) {
+  for (const [line, cpus, gpus] of [["alloc|32|4|1|0", 4, 1], ["allocated|32|4|1|0", 4, 1], ["idle|32|0|1|0", 32, 0], ["mix|32|24|1|0", 8, 1], ["mixed|32|24|1|0", 8, 1], ["alloc|32|0|1|0", 32, 1]]) {
     const result = await probe(`NODE_PROBE=${line}\n`, { cpus, gpus });
     assert.equal(result.ok, true, `usable node "${line}" for ${cpus} cpu / ${gpus} gpu must pass`);
     assert.match(result.note, new RegExp(`${TEST_NODE} state=`));
