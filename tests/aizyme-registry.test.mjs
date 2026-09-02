@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createAizymeTools, LOCAL_REMOTE_BUNDLE, STAGES } from "../lib/aizyme.js";
+import { createAizymeTools, STAGES } from "../lib/aizyme.js";
 import { createRunRegistry } from "../lib/run-registry.js";
 
 const SESSION = "aiz-registry-session";
@@ -50,7 +50,8 @@ function harness({ remoteImpl, runRegistry } = {}) {
 
 // The stage0-1 success path needs the REAL bundle file digests (the remote
 // checksum gate compares against the in-memory local digests).
-const bundleSha = Object.fromEntries(stage.files.map((name) => [name, sha(readFileSync(join(LOCAL_REMOTE_BUNDLE, name)))]));
+const fixtureBundle = join(import.meta.dirname, "../fixtures/aizyme-remote");
+const bundleSha = Object.fromEntries(stage.files.map((name) => [name, sha(readFileSync(join(fixtureBundle, name)))]));
 
 function successRemoteImpl() {
   return (_target, command) => {
