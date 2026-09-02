@@ -1,36 +1,9 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import test from "node:test";
 import * as bundle from "../lib/index.js";
 
-const policyPath = "/Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml";
-const fixturePolicy = `schema_version: 1
-policy: genbio-remote-compute
-updated: 2026-09-02
-defaults: {on_fail: stop}
-ssh:
-  client: openssh-native
-  noninteractive: true
-  options: {tty: false, batch_mode: true, connect_timeout_s: 10, strict_host_key_checking: 'yes', agent_forwarding: false, x11_forwarding: false, port_forwarding: false}
-targets:
-  HPC:
-    ssh_target: HPC
-    surface: slurm
-    allowlist: {gpu04: {partition: gpus}, cpu01: {partition: cpus}}
-  NHPC:
-    ssh_target: NHPC
-    surface: slurm
-    allowlist: {gpu01: {partition: gpu}}
-    test_gate: {real_submission: gpu01}
-  genbio_mdanh:
-    ssh_target: genbio_mdanh
-    surface: direct
-  genbioh100:
-    ssh_target: genbioh100
-    surface: direct
-    login_shell: false
-    limits: {gpus_allowed: [0], cpu_threads_per_job: 16, mem_gb_per_job: 32, concurrent_gpu_jobs: 1}
-    hardware: {reserved_gpu: 1, protected_process: gpu_util}
-`;
+const policyPath = path.resolve(import.meta.dirname, "../fixtures/genbio-compute-policy.test.yaml");
 
 async function harness({ memoryMode = "manual", publish } = {}) {
   const tools = [];

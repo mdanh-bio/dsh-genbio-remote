@@ -5,7 +5,7 @@ import test from "node:test";
 import { load as parseYaml } from "js-yaml";
 
 const root = path.resolve(import.meta.dirname, "..");
-const policyPath = "/Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml";
+const policyPath = path.join(root, "fixtures/genbio-compute-policy.test.yaml");
 const host = fs.readFileSync(path.join(root, "lib/index.js"), "utf8");
 const client = fs.readFileSync(path.join(root, "lib/client.js"), "utf8");
 const adapter = fs.readFileSync(path.join(root, "lib/openviking.js"), "utf8");

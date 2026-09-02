@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 
 const bundle = await import("../lib/index.js");
+const policyPath = path.resolve(import.meta.dirname, "../fixtures/genbio-compute-policy.test.yaml");
 const registered = [];
 const provided = new Map();
 const published = [];
@@ -8,11 +10,9 @@ const shellRuns = [];
 let latestJob = null;
 let jobCounter = 0;
 const WORKSPACE_CWD = "/tmp/dsh-smoke-workspace";
-const DAE_ROOT = "/data01/genbiolab/mdanh/data/simulation/daes_enzyme";
 // Persistent per-workspace remote grants (the dsh-workspace-folder-access store
-// stand-in). Only the DAE project root is pre-granted, so the gpu03 smoke
-// (whose run dir lives under HPC_SMOKE_ROOT) must go through the ask flow.
-const remoteGrantStore = [{ target: "HPC", root: DAE_ROOT, mode: "rw" }];
+// stand-in). Start empty so the policy smoke root must go through the ask flow.
+const remoteGrantStore = [];
 const jobs = {
   start(spec) {
     latestJob = { spec, hooks: spec.run() };
@@ -46,13 +46,14 @@ const ctx = {
   effect(setup) { return setup(); },
 };
 await bundle.apply(ctx, {
-  policyPath: "/Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml",
+  policyPath,
   policyPollMs: 3600000,
   commandTimeoutMs: 30000,
   smokeTimeoutMs: 180000,
   logMaxBytes: 65536,
 });
 const tools = Object.fromEntries(registered.map((tool) => [tool.name, tool]));
+for (const required of ["genbio_project_plan", "genbio_project_execute", "genbio_project_status", "genbio_project_cancel", "genbio_project_fetch"]) assert.ok(tools[required], `missing required schema-v2 tool ${required}`);
 provided.get("genbioRemote").registerMemoryPublisher({ async publish(session, record) { published.push({ session, record }); return { ok: true, status: "published", sessionId: `dsh-${session.id}` }; } });
 const exec = (id) => ({ agent: { id, session: { id, header: { cwd: WORKSPACE_CWD } } }, signal: new AbortController().signal });
 
@@ -65,22 +66,10 @@ await latestJob.hooks.done;
 assert.equal(shellRuns.at(-1).timeoutMs, 180000);
 assert.match(shellRuns.at(-1).command, /#SBATCH --nodelist=gpu04/);
 assert.equal(["--account", "--time=", "--mem", "--exclusive"].some((token) => shellRuns.at(-1).command.includes(token)), false);
-// The smoke run dir is not under the pre-granted DAE root, so the launch had to
-// pause on the remote-folder question; the mock answered session-only with rw.
+// The smoke root was not pre-granted, so the launch had to pause on the
+// remote-folder question; the mock answered session-only with rw.
 assert.deepEqual(smokeLaunched.status.remoteGrants, [{ target: "HPC", root: bundle.HPC_SMOKE_ROOT, mode: "rw" }]);
 assert.equal(smokeLaunched.status.started.remoteGrants.some((entry) => entry.root === bundle.HPC_SMOKE_ROOT), true);
-
-// AI.zymes inspect from the granted workspace: the DAE root grant (rw) covers
-// the read need, so no question fires and no session grant is added.
-const inspected = await tools.genbio_aizyme_inspect.execute({}, hpc);
-assert.equal(inspected.ok, true);
-assert.deepEqual(inspected.status.remoteGrants, [{ target: "HPC", root: bundle.HPC_SMOKE_ROOT, mode: "rw" }]);
-// AI.zymes inspect from a foreign workspace (no stored grants): the read need
-// fires the question and the mock answers session-only with ro (read need).
-const foreign = { agent: { id: "foreign", session: { id: "foreign", header: { cwd: "/tmp/dsh-foreign-workspace" } } }, signal: new AbortController().signal };
-const inspectedForeign = await tools.genbio_aizyme_inspect.execute({}, foreign);
-assert.equal(inspectedForeign.ok, true);
-assert.deepEqual(inspectedForeign.status.remoteGrants, [{ target: "HPC", root: DAE_ROOT, mode: "ro" }]);
 
 const direct = exec("direct");
 await tools.genbio_set_envelope.execute({ target: "genbioh100", node: "genbioh100", workload_class: "gpu-render", max_cpus: 16, max_gpus: 1, mem_gb: 32, concurrency: 1, acknowledge_restrictions: true }, direct);

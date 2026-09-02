@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-const { DEFAULT_RCLONE_REMOTE, RCLONE_TRANSFER_ARGS, SSH_TRANSPORT_FAIL_RE, resolveRcloneRemote, rcloneCopytoCommand, runRemoteWithRetry } = await import("../lib/transfer.js");
+const { DEFAULT_RCLONE_REMOTE, RCLONE_TRANSFER_ARGS, SSH_TRANSPORT_FAIL_RE, resolveRcloneRemote, rcloneCopyfromCommand, rcloneCopytoCommand, runRemoteWithRetry } = await import("../lib/transfer.js");
 
 const noSleep = () => Promise.resolve();
 
@@ -33,6 +33,12 @@ try {
   assert.throws(() => rcloneCopytoCommand("relative/local.txt", "hpc", "/data01/x"), /absolute local path/u);
   assert.throws(() => rcloneCopytoCommand("/tmp/a b.txt", "hpc", "/data01/x"), /unsafe fixed path/u);
   assert.throws(() => rcloneCopytoCommand("/tmp/x", "hpc", "data/relative"), /absolute remote path/u);
+  assert.equal(
+    rcloneCopyfromCommand("hpc", "/data01/run/report.json", "/tmp/report.json.part"),
+    "rclone copyto --retries 2 --low-level-retries 2 --contimeout 20s 'hpc:/data01/run/report.json' '/tmp/report.json.part'",
+  );
+  assert.throws(() => rcloneCopyfromCommand("hpc", "data/relative", "/tmp/report"), /absolute remote path/u);
+  assert.throws(() => rcloneCopyfromCommand("hpc", "/data01/report", "relative/report"), /absolute local path/u);
 
   // ── Bounded transport retry semantics ──
   assert.match("connect to host x", SSH_TRANSPORT_FAIL_RE);

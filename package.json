@@ -1,7 +1,7 @@
 {
   "name": "dsh-genbio-remote",
-  "version": "0.1.2",
-  "description": "Policy-enforced native OpenSSH Genbio remote operations with session resource envelopes, job visibility, and a client dock that shows the session envelope and live usage while remote compute is in use.",
+  "version": "0.2.0",
+  "description": "Policy-enforced DSH plugin for declarative, exact-once Slurm remote compute with workload evidence and controlled workflows.",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
@@ -11,31 +11,66 @@
     "./client": "./lib/client.js",
     "./project": "./lib/project.js",
     "./project-tools": "./lib/project-tools.js",
+    "./project-source": "./lib/project-source.js",
+    "./execution-core": "./lib/execution-core.js",
+    "./workflow": "./lib/workflow.js",
+    "./workflow-tools": "./lib/workflow-tools.js",
+    "./workflow-registry": "./lib/workflow-registry.js",
     "./aggregate": "./lib/aggregate.js",
     "./project-status-tools": "./lib/project-status-tools.js",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "tests", "cordis.patch.yml"],
-  "scripts": {"test": "node --test tests/*.test.mjs && node tests/runtime-smoke.mjs", "check": "node --check lib/index.js && node --check lib/openviking.js && node --check lib/client.js && node --check lib/inventory.js && node --check lib/run-registry.js && node --check lib/workflow.js && node --check lib/workflow-tools.js && node --check lib/aggregate.js && node --check lib/project-status-tools.js && npm test"},
+  "files": [
+    "lib",
+    "fixtures",
+    "examples",
+    "docs",
+    "tests",
+    "README.md",
+    "CHANGELOG.md",
+    "cordis.patch.example.yml",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs && node tests/runtime-smoke.mjs",
+    "check:syntax": "node --check lib/aggregate.js && node --check lib/client.js && node --check lib/index.js && node --check lib/inventory.js && node --check lib/openviking.js && node --check lib/execution-core.js && node --check lib/project-status-tools.js && node --check lib/project-tools.js && node --check lib/project.js && node --check lib/project-source.js && node --check lib/slurm-discovery.js && node --check lib/slurm-policy.js && node --check lib/transfer.js && node --check lib/workflow-registry.js && node --check lib/workflow-tools.js && node --check lib/workflow.js",
+    "check": "npm run check:syntax && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "dsh": {
-    "bundle": {"patch": "./cordis.patch.yml"},
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
-      "inject": ["@deepseek-ai/dsh-client-runtime", "@deepseek-ai/dsh-client-ui-conversation", "@deepseek-ai/dsh-client-locale"]
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   },
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
+    "js-yaml": "4.3.1",
+    "zod": "4.4.3"
+  },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tools": "*",
-    "@deepseek-ai/dsh-system-prompt": "*",
-    "@deepseek-ai/dsh-session-projection": "*",
-    "@deepseek-ai/dsh-user-questions": "*",
-    "zod": "*"
+    "@deepseek-ai/dsh-system-prompt": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-session-projection": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-user-questions": "^0.1.1-rc.2"
   },
   "peerDependenciesMeta": {
-    "@deepseek-ai/dsh-tools": {"optional": true},
-    "@deepseek-ai/dsh-system-prompt": {"optional": true},
-    "@deepseek-ai/dsh-session-projection": {"optional": true},
-    "@deepseek-ai/dsh-user-questions": {"optional": true},
-    "zod": {"optional": true}
+    "@deepseek-ai/dsh-system-prompt": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-session-projection": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-user-questions": {
+      "optional": true
+    }
   }
 }

@@ -15,7 +15,7 @@ function harness(projectsDir, state) {
     requirePolicy: () => policy,
     requireState: () => state,
     publicState: () => ({ policy: state.policy, envelope: state.envelope, runs: state.runs }),
-    config: { pinnedProjectsDir: projectsDir },
+    config: { projectsDir: projectsDir },
   });
   return { tools, state };
 }
@@ -50,7 +50,7 @@ test("genbio_projects_status aggregates all projects read-only (zero session mut
     policy: { hash: "a".repeat(64) },
     envelope: null,
     runs: [
-      { runId: "r1", operation: "pinned-demo-run", status: "running", target: "HPC", startedAt: 1, finishedAt: null },
+      { runId: "r1", operation: "project-demo-run", status: "running", target: "HPC", startedAt: 1, finishedAt: null },
       { runId: "r2", operation: "genbio-policy-step", status: "completed", target: "HPC", startedAt: 0, finishedAt: 2 },
     ],
     plans: [],
@@ -69,7 +69,7 @@ test("genbio_projects_status aggregates all projects read-only (zero session mut
   assert.equal(demo.operations[0].form, "recipe");
   assert.equal(demo.operations[0].cpus, 4);
   const bad = status.projects_status.find((entry) => entry.project === "bad");
-  assert.deepEqual(bad, { project: "bad", valid: false, error: "bad: schema_version must be 1 or 2" });
+  assert.deepEqual(bad, { project: "bad", valid: false, error: "bad: schema_version 2 is required; schema_version 1 is no longer supported" });
   // Rich discovery list (with operation objects) is exposed for the GUI.
   const demoProject = status.projects.find((entry) => entry.project === "demo");
   assert.equal(demoProject.operations[0].cpus, 4);

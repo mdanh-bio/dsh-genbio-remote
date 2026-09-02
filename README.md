@@ -4,7 +4,7 @@ Private DeepSeek Harness plugin for policy-controlled remote scientific computin
 
 ## Capabilities
 
-- Declarative schema-v2 project and operation manifests
+- Mandatory schema-v2 project and workflow manifests with typed recipe operations
 - Policy and session resource-envelope validation
 - SHA-256-bound staging with rclone over SFTP
 - Exact-once Slurm submission with ambiguity reconciliation
@@ -19,7 +19,9 @@ The plugin deliberately does not expose a generic remote-command interface. Tran
 
 ## Project model
 
-New scientific projects should normally be configured with YAML manifests and project-owned scripts. Plugin source changes are intended only for reusable execution, policy, scheduler, or security capabilities.
+New scientific projects use a workspace-root `genbio-project.yml` (or `.yaml`) plus project-owned scripts, or a schema-v2 manifest in the configured `projectsDir`. The plugin discovers manifests lazily. Schema version 1, raw SBATCH template projects, and project-specific built-in adapters are intentionally unsupported; plugin source changes are reserved for reusable execution, policy, scheduler, or security capabilities.
+
+See `docs/PROJECT-MANIFEST.md`, `docs/WORKFLOWS.md`, and `docs/INSTALL.md`.
 
 The preferred lifecycle is:
 

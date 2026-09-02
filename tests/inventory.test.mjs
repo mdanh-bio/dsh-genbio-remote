@@ -92,7 +92,7 @@ test("genbio_project_inventory is a local read-only content-addressed view", asy
     requirePolicy: () => policy,
     requireState: () => state,
     publicState: (s) => ({ policy: s.policy, runs: s.runs }),
-    config: { pinnedProjectsDir: fx.projectsDir },
+    config: { projectsDir: fx.projectsDir },
   });
   const result = await tools.inventoryTool.execute({ project: "demo" }, exec);
   assert.equal(result.ok, true);

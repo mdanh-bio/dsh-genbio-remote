@@ -1,0 +1,13 @@
+schema_version: 2
+workflow: production
+nodes:
+  - id: prepare
+    project: example
+    operation: prepare
+    parameters: {}
+  - id: run
+    project: example
+    operation: run
+    parameters:
+      count: 10
+    depends_on: [prepare]

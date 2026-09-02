@@ -1,6 +1,6 @@
 // Adversarial tests for genbio_project_execute: the declarative recipe
-// executor wired into the SHARED atomic exact-once pinned submission core.
-// Reuses the pinned primitives (validateEnvelope, assertAggregateCapacity,
+// executor wired into the schema-v2 internal execution core.
+// Reuses the execution-core primitives (validateEnvelope, assertAggregateCapacity,
 // allocationsOf, submissionsOf, startTrackedJob, submitJob, stageAndValidate,
 // stageRecipeWrapper) — no parallel submission path.
 //
@@ -10,11 +10,11 @@
 //  3. no-envelope
 //  4. pair-lock reentry rejection (concurrent same-(project, operation))
 //  5. wrapper exact prefix staging (genbio-recipes/<shortHash>.run.sbatch)
-//  6. ambiguous no-resubmit reusing pinned semantics (harness stubs)
+//  6. ambiguous no-resubmit reusing execution-core semantics (harness stubs)
 //  7. wrapper bytes re-resolution (fresh re-resolution, not stored bytes)
 //
 // No remote action during development: every runRemote/shell.run is a harness
-// stub; the integrity gates (remote sha256, package self-check, gpu03 probe,
+// stub; the integrity gates (remote sha256, package self-check, node probe,
 // reconciliation) are exercised against the stubs exactly as in production.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -23,7 +23,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createProjectTools, loadProject } from "../lib/project-tools.js";
+import { createProjectTools } from "../lib/project-tools.js";
+import { createProjectSource } from "../lib/project-source.js";
 import { resolveRecipe } from "../lib/project.js";
 
 const POLICY_HASH = "a".repeat(64);
@@ -47,7 +48,7 @@ function makeRemoteImpl({ runShSha, wrapperRel, wrapperSha, submit }) {
     if (command.includes("test -s PREPARED_SHA256.txt")) return { stdout: `${runShSha}  scripts/run.sh\n`, stderr: "", exitCode: 0 };
     // stageRecipeWrapper remote sha256 gate on the wrapper.
     if (command.includes("sha256sum") && command.includes("genbio-recipes/")) return { stdout: `${wrapperSha}  ${wrapperRel}\n`, stderr: "", exitCode: 0 };
-    // gpu03 probe / reconciliation / mkdir / inspect: empty, exit 0 → the
+    // node probe / reconciliation / mkdir / inspect: empty, exit 0 → the
     // documented stub/no-op paths (probe: no marker; reconcile: no candidate).
     return { stdout: "", stderr: "", exitCode: 0 };
   };
@@ -62,7 +63,7 @@ function harness({ projectsDir, remoteImpl, shellImpl } = {}) {
     requirePolicy: () => policy,
     requireState: () => state,
     publicState: () => ({}),
-    config: { pinnedProjectsDir: projectsDir, logMaxBytes: 65536 },
+    config: { projectsDir, logMaxBytes: 65536 },
     runRemote: async (target, command) => { calls.remote.push(command); return remoteImpl?.(target, command) ?? { stdout: "", stderr: "", exitCode: 0 }; },
     shell: { resolve: (request) => request, run: async (request) => { calls.shell.push(request.command); return shellImpl?.(request.command) ?? { stdout: { text: "" }, stderr: { text: "" }, exitCode: 0, signal: null, timedOut: false }; } },
     userQuestions: { ask: async ({ questions }) => ({ answers: questions.map((q) => ({ id: q.id, selected: ["Approve this transfer"] })) }) },
@@ -106,7 +107,7 @@ jobs:
 // Compute the FRESH re-resolution (what execution must use): the wrapper bytes,
 // the wrapper SHA, and the content-addressed wrapper path.
 async function freshWrapper(projectsDir, params = { count: 4 }) {
-  const loaded = await loadProject(projectsDir, "demo");
+  const loaded = await createProjectSource({ projectsDir }).loadProject("demo", exec);
   const resolution = resolveRecipe({ manifest: loaded.manifest, operation: "run", parameters: params, policy, envelope });
   return { loaded, resolution, wrapperSha: resolution.bytesSha, shortHash: loaded.manifestSha.slice(0, 12), wrapperRel: `genbio-recipes/${loaded.manifestSha.slice(0, 12)}.run.sbatch` };
 }
@@ -221,7 +222,7 @@ test("wrapper exact prefix staging: wrapper lands at genbio-recipes/<shortHash>.
   assert.ok(sbatch.includes(`${fw.wrapperRel}`), `sbatch submitted the wrapper path (got: ${sbatch})`);
 });
 
-// ── 6. Ambiguous no-resubmit (reusing pinned semantics via harness stubs) ──
+// ── 6. Ambiguous no-resubmit (reusing execution-core semantics via harness stubs) ──
 test("ambiguous no-resubmit: a lost-transport submission is never resubmitted", async (t) => {
   const fx = await fixture(t);
   const fw = await freshWrapper(fx.projectsDir);
@@ -243,7 +244,7 @@ test("ambiguous no-resubmit: a lost-transport submission is never resubmitted", 
   assert.equal(firstOutcome.status, "failed", "a timedOut submission settles as a failed run");
   assert.match(firstOutcome.detail, /ambiguous|transport|timed out|reconcil/u, "the timedOut outcome must be classified ambiguous, not a definite failure");
   assert.equal(submitCount, 1, "exactly one sbatch was dispatched");
-  // Second execute: reconcile read-only, NEVER resubmit (pinned exact-once gate).
+  // Second execute: reconcile read-only, NEVER resubmit (execution-core exact-once gate).
   await h.tools.executeTool.execute({ plan_hash: planHash }, exec);
   const secondOutcome = await h.latest().done;
   assert.equal(secondOutcome.status, "failed", "the gated pair stays ambiguous until resolved");

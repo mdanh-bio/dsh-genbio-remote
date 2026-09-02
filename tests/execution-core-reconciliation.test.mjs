@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseReconciliationEnvelope, resolveReconciliationCandidates } from "../lib/pinned.js";
+import { parseReconciliationEnvelope, resolveReconciliationCandidates } from "../lib/execution-core.js";
 
 const name = "analysis.abcdef12";
 const envelope = (squeue = "", sacct = "") => `SQUEUE_BEGIN\n${squeue}\nSQUEUE_END\nSACCT_BEGIN\n${sacct}\nSACCT_END\n`;

@@ -1,0 +1,22 @@
+- insert:
+    - id: genbio-remote
+      name: dsh-genbio-remote
+      config:
+        policyPath: /absolute/path/to/genbio-compute-policy.yaml
+        policyPollMs: 2000
+        commandTimeoutMs: 30000
+        smokeTimeoutMs: 180000
+        logMaxBytes: 65536
+        memoryMode: manual
+        projectsDir: /absolute/path/to/central-genbio-projects
+        workflowRegistryDir: /absolute/path/to/genbio-workflow-registry
+        rcloneRemote:
+          HPC: your-hpc-rclone-remote
+          NHPC: your-nhpc-rclone-remote
+          genbioh100: your-h100-rclone-remote
+          genbio_mdanh: your-direct-rclone-remote
+
+- id: openviking-memory
+  insert:
+    - id: genbio-openviking
+      name: dsh-genbio-remote/openviking
