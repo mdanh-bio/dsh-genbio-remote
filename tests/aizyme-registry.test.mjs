@@ -42,7 +42,7 @@ function harness({ remoteImpl, runRegistry } = {}) {
     },
     userQuestions: { ask: async ({ questions }) => ({ answers: questions.map((q) => ({ id: q.id, selected: ["Approve this transfer"] })) }) },
     jobs: { start(spec) { latest = spec.run(); return `job-${calls.remote.length}`; } },
-    config: { logMaxBytes: 65536 },
+    config: { logMaxBytes: 65536, aizymeBundleDir: fixtureBundle },
     runRegistry,
   });
   return { tools, calls, state, latest: () => latest };
