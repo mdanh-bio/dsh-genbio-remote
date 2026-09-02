@@ -293,7 +293,7 @@ test("clean end-to-end: approved plan stages the package + wrapper and submits o
   const planned = await h.tools.planTool.execute({ project: "demo", operation: "run", parameters: { count: 7 } }, exec);
   const result = await h.tools.executeTool.execute({ plan_hash: planned.status.planned.plan_hash }, exec);
   assert.equal(result.ok, true, "admission succeeds");
-  assert.equal(result.started, true, "a session run is recorded");
+  assert.equal(result.status.started.runId, h.state.runs[0].runId, "a session run is recorded in the declared status output");
   const outcome = await h.latest().done;
   assert.equal(outcome.status, "completed", "the clean submission completes");
   assert.match(h.latest().readOutput(), /JOB_ID=4242/u);

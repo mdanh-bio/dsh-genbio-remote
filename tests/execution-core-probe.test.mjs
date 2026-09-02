@@ -30,12 +30,19 @@ test("probe fails closed on insufficient headroom", async () => {
   await assert.rejects(probe(`NODE_PROBE=${record({ allocGpu: 8 })}\n`, { gpus: 1 }), /GPU headroom/u);
 });
 
+test("mixed nodes without GPU allocation TRES defer availability to sbatch", async () => {
+  const liveStyle = record().replace("CfgTRES=cpu=192,mem=515115M,billing=192,gres/gpu=8", "Gres=gpu:rtx5000:8 CfgTRES=cpu=192,mem=515115M,billing=192").replace("AllocTRES=cpu=64,gres/gpu=4", "AllocTRES=cpu=64");
+  const result = await probe(`NODE_PROBE=${liveStyle}\n`);
+  assert.equal(result.ok, true);
+  assert.match(result.note, /free_gpus=scheduler-authority/u);
+});
+
 test("probe fails closed on missing, wrong, or malformed node evidence", async () => {
   await assert.rejects(probe("NODE_PROBE=\n"), /no such node/u);
   await assert.rejects(probe(`NODE_PROBE=${record({ node: "gpu03" })}\n`), /unparseable/u);
   await assert.rejects(probe("NODE_PROBE=garbage\n"), /unparseable/u);
   await assert.rejects(probe(`NODE_PROBE=${record().replace("CPUTot=192", "CPUTot=xx")}\n`), /non-numeric/u);
-  await assert.rejects(probe(`NODE_PROBE=${record().replace("CfgTRES=cpu=192,mem=515115M,billing=192,gres/gpu=8", "CfgTRES=cpu=192")}\n`), /CPU\/GPU resources/u);
+  await assert.rejects(probe(`NODE_PROBE=${record().replace("CfgTRES=cpu=192,mem=515115M,billing=192,gres/gpu=8", "CfgTRES=cpu=192").replace("AllocTRES=cpu=64,gres/gpu=4", "AllocTRES=cpu=64").replace(" Gres=gpu:rtx5000:8", "")}\n`), /CPU\/GPU resources/u);
 });
 
 test("probe fails closed on nonzero exit", async () => {
