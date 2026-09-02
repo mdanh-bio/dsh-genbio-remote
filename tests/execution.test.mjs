@@ -298,6 +298,7 @@ test("clean end-to-end: approved plan stages the package + wrapper and submits o
   assert.equal(outcome.status, "completed", "the clean submission completes");
   assert.match(h.latest().readOutput(), /JOB_ID=4242/u);
   assert.equal(submitCount, 1, "exactly one sbatch");
+  assert.ok(h.calls.remote.some((command) => command.includes("chmod 700 -- 'scripts/run.sh'")), "staged recipe scripts are made executable before submission");
   assert.equal(h.state.runs.length, 1, "one session run recorded");
   const allocation = (h.state.allocations ?? [])[0];
   assert.equal(allocation?.status, "nonterminal", "the accepted job reserves capacity until terminal evidence");
