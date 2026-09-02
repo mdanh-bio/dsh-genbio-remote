@@ -45,10 +45,15 @@ test("schema v2 parses a staged script recipe with four strict parameter types",
   assert.equal(parseProjectManifest("demo", nullProto).schemaVersion, 2, "safe null-prototype YAML mappings are accepted");
 });
 
+test("schema v2 is mandatory and raw templates are rejected", () => {
+  assert.throws(() => manifest({ schema_version: 1 }), /schema_version 2 is required/u);
+  assert.throws(() => manifest({ jobs: { prepare: { cpus: 4, template: "job.sbatch" } } }), /raw templates|unknown field template/u);
+});
+
 test("schema v2 rejects arbitrary shell surfaces and unsafe recipes", () => {
   assert.throws(() => manifest({ jobs: { prepare: { cpus: 4, recipe: { name: "x", script: "scripts/run.sh", run: "rm -rf /" } } } }), /unknown field run/u);
   assert.throws(() => manifest({ jobs: { prepare: { cpus: 4, recipe: { name: "x", script: "missing.sh", argv: [] } } } }), /included in files/u);
-  assert.throws(() => manifest({ python_bin: "/evil/python" }), /not permitted/u);
+  assert.throws(() => manifest({ python_bin: "/evil/python" }), /unknown field python_bin/u);
   assert.throws(() => manifest({ workflows: {} }), /unknown field workflows/u);
   assert.throws(() => manifest({ files: ["scripts/run.sh", "scripts/run.sh"] }), /duplicate/u);
 });

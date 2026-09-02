@@ -8,8 +8,7 @@
         smokeTimeoutMs: 180000
         logMaxBytes: 65536
         memoryMode: manual
-        pinnedProjectsDir: /absolute/path/to/central-genbio-projects
-        runRegistryDir: /absolute/path/to/genbio-run-registry
+        projectsDir: /absolute/path/to/central-genbio-projects
         workflowRegistryDir: /absolute/path/to/genbio-workflow-registry
         rcloneRemote:
           HPC: your-hpc-rclone-remote

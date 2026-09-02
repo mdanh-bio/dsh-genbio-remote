@@ -45,7 +45,7 @@ fetch:
 
 For a workspace manifest, `local_root` must resolve exactly to the active session workspace. The manifest and every declared file must be regular, non-symlink files inside that workspace. Both manifest extensions at once are rejected as ambiguous.
 
-A central `<pinnedProjectsDir>/<project>.yaml` remains supported. If the active workspace manifest declares the same project, it takes precedence for that workspace and results report `origin: workspace`.
+A central `<projectsDir>/<project>.yaml` is also supported. If the active workspace manifest declares the same project, it takes precedence for that workspace and results report `origin: workspace`. All workspace and configured manifests must use schema version 2 and declarative recipes; raw template jobs are rejected.
 
 ## Planning and execution
 
@@ -56,6 +56,8 @@ genbio_project_inventory
 genbio_project_plan
 genbio_project_execute
 genbio_project_status
+genbio_project_cancel
+genbio_project_fetch
 ```
 
 Execution fresh-reads the same source and rejects workspace changes, source changes, manifest drift, policy drift, wrapper drift, or plan-hash drift before staging or submission.

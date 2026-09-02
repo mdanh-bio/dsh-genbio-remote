@@ -13,16 +13,14 @@ const clientSource = await readFile(new URL("../lib/client.js", import.meta.url)
 
 const REMOTE_ACTION_TOOLS = [
   "genbio_launch",
-  "genbio_pinned_job",
-  "genbio_pinned_stage",
-  "genbio_aizyme_stage",
   "genbio_project_execute",
+  "genbio_project_cancel",
+  "genbio_project_fetch",
   "genbio_workflow_execute",
   "genbio_workflow_advance",
   "genbio_workflow_cancel",
   "genbio_finalize_run",
   "genbio_publish_run",
-  "genbio_pinned_fetch",
   "scp ",
   "rclone ",
   "ssh ",

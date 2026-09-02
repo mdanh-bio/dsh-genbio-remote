@@ -1,6 +1,6 @@
 # Controlled workflows
 
-Workspace workflows live under `genbio-workflows/` and use `.yml` or `.yaml`. Configured compatibility workflows remain under `<pinnedProjectsDir>/workflows/`.
+Workspace workflows live under `genbio-workflows/` and use `.yml` or `.yaml`. Configured workflows live under `<projectsDir>/workflows/`. Every workflow must declare `schema_version: 2`; legacy schema-v1 workflows are rejected.
 
 ```yaml
 schema_version: 2

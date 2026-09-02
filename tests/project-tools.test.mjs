@@ -20,7 +20,7 @@ function harness(projectsDir) {
     requirePolicy: () => { hooks.policy += 1; return policy; },
     requireState: () => { hooks.state += 1; return state; },
     publicState: () => ({ policy: state.policy, envelope: state.envelope, runs: state.runs }),
-    config: { pinnedProjectsDir: projectsDir },
+    config: { projectsDir },
   });
   return { tools, state, hooks };
 }
@@ -50,7 +50,7 @@ jobs:
         - {param: count}
 `;
   await writeFile(join(projectsDir, "demo.yaml"), manifest);
-  await writeFile(join(projectsDir, "bad.yaml"), "schema_version: 99\nproject: bad\n");
+  await writeFile(join(projectsDir, "bad.yaml"), "schema_version: 1\nproject: bad\n");
   return { root, projectsDir, manifest };
 }
 
@@ -59,6 +59,7 @@ test("project discovery and describe are local read-only manifest views", async 
   const h = harness(fx.projectsDir);
   const listed = await h.tools.projectsTool.execute({}, exec);
   assert.deepEqual(listed.status.projects.map(({ project, valid }) => ({ project, valid })), [{ project: "bad", valid: false }, { project: "demo", valid: true }]);
+  assert.match(listed.status.projects[0].error, /schema_version 2 is required/u);
   const described = await h.tools.describeTool.execute({ project: "demo" }, exec);
   assert.equal(described.status.project.schema_version, 2);
   assert.equal(described.status.project.operations[0].form, "recipe");
@@ -108,19 +109,6 @@ test("status reports session plans without scheduler or remote activity", async 
   const status = await h.tools.statusTool.execute({ project: "demo" }, exec);
   assert.equal(status.status.plans.length, 1);
   assert.deepEqual(status.status.project_runs, []);
-});
-
-test("v1 manifests remain discoverable and describable but cannot enter declarative planning", async (t) => {
-  const fx = await fixture(t);
-  const v1 = `schema_version: 1\nproject: legacy\nlocal_root: ${fx.root}/legacy\nremote_root: /data01/legacy\nfiles: [job.sbatch]\njobs:\n  run: {template: job.sbatch, cpus: 1}\n`;
-  await writeFile(join(fx.projectsDir, "legacy.yaml"), v1);
-  const h = harness(fx.projectsDir);
-  const listed = await h.tools.projectsTool.execute({}, exec);
-  assert.equal(listed.status.projects.find((item) => item.project === "legacy").schema_version, 1);
-  const described = await h.tools.describeTool.execute({ project: "legacy" }, exec);
-  assert.equal(described.status.project.operations[0].form, "template");
-  await assert.rejects(h.tools.planTool.execute({ project: "legacy", operation: "run" }, exec), /requires schema_version 2/u);
-  assert.equal(h.state.plans.length, 0);
 });
 
 test("unsafe and unknown project names fail closed", async (t) => {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, symlink, unlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, realpath, rm, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -16,7 +16,7 @@ async function fixture(t) {
   await mkdir(configured);
   await writeFile(join(workspace, "scripts/run.sh"), "#!/bin/bash\ntrue\n");
   t.after(() => rm(root, { recursive: true, force: true }));
-  return { root, workspace, configured, source: createProjectSource({ pinnedProjectsDir: configured }) };
+  return { root, workspace, configured, source: createProjectSource({ projectsDir: configured }) };
 }
 
 test("workspace project is discovered immediately and overrides configured project", async (t) => {
@@ -65,12 +65,34 @@ test("workspace project lookup does not impersonate another requested name", asy
   await assert.rejects(fx.source.loadProject("other", execAt(fx.workspace)), /unknown Genbio project: other/u);
 });
 
-test("workspace workflow lookup is bounded to genbio-workflows and detects extension ambiguity", async (t) => {
+test("workspace workflow discovery prefers genbio-workflows and preserves schema-v2 text", async (t) => {
   const fx = await fixture(t);
-  await mkdir(join(fx.workspace, "genbio-workflows"));
-  await writeFile(join(fx.workspace, "genbio-workflows/pipeline.yml"), "schema_version: 1\nworkflow: pipeline\nnodes: []\n");
+  const configuredWorkflows = join(fx.configured, "workflows");
+  const workspaceWorkflows = join(fx.workspace, "genbio-workflows");
+  await mkdir(configuredWorkflows);
+  await mkdir(workspaceWorkflows);
+  const configured = "schema_version: 2\nworkflow: pipeline\nnodes:\n  - {id: configured, project: demo, operation: run, parameters: {}}\n";
+  const workspace = "schema_version: 2\nworkflow: pipeline\nnodes:\n  - {id: workspace, project: demo, operation: run, parameters: {mode: safe}}\n";
+  await writeFile(join(configuredWorkflows, "pipeline.yaml"), configured);
+  await writeFile(join(workspaceWorkflows, "pipeline.yml"), workspace);
+
   const loaded = await fx.source.loadWorkflow("pipeline", execAt(fx.workspace));
   assert.equal(loaded.origin.kind, "workspace");
-  await writeFile(join(fx.workspace, "genbio-workflows/pipeline.yaml"), "schema_version: 1\nworkflow: pipeline\nnodes: []\n");
+  assert.equal(loaded.origin.workspace, await realpath(fx.workspace));
+  assert.equal(loaded.text, workspace);
+  await unlink(join(workspaceWorkflows, "pipeline.yml"));
+  const fallback = await fx.source.loadWorkflow("pipeline", execAt(fx.workspace));
+  assert.equal(fallback.origin.kind, "configured");
+  assert.equal(fallback.text, configured);
+});
+
+test("workspace workflow discovery is bounded and rejects extension ambiguity", async (t) => {
+  const fx = await fixture(t);
+  const workflows = join(fx.workspace, "genbio-workflows");
+  await mkdir(workflows);
+  const text = "schema_version: 2\nworkflow: pipeline\nnodes:\n  - {id: run, project: demo, operation: run, parameters: {}}\n";
+  await writeFile(join(workflows, "pipeline.yml"), text);
+  await writeFile(join(workflows, "pipeline.yaml"), text);
   await assert.rejects(fx.source.loadWorkflow("pipeline", execAt(fx.workspace)), /keep exactly one workflow file/u);
+  await assert.rejects(fx.source.loadWorkflow("../pipeline", execAt(fx.workspace)), /invalid workflow name/u);
 });

@@ -40,12 +40,12 @@ function harness(fx) {
     submitCalls += 1;
     const wf = state.workflowPlans.at(-1);
     const node = wf.nodeRecords.find((item) => item.operationPlanHash === plan_hash);
-    const run = { target: "HPC", operation: `pinned-${node.project}-${node.operation}`, slurmJobId: String(1000 + submitCalls), workloadStatus: "submitted" };
+    const run = { target: "HPC", operation: `project-${node.project}-${node.operation}`, slurmJobId: String(1000 + submitCalls), workloadStatus: "submitted" };
     state.runs.push(run);
     return { status: { started: run } };
   }};
   const projectStatusTool = { async execute({ project, operation, job_id }) {
-    const run = state.runs.find((item) => item.slurmJobId === job_id && item.operation === `pinned-${project}-${operation}`);
+    const run = state.runs.find((item) => item.slurmJobId === job_id && item.operation === `project-${project}-${operation}`);
     run.workloadStatus = "completed"; run.slurmStatus = "COMPLETED"; run.slurmExitCode = "0:0"; run.workloadEvidence = "scheduler-and-job-output";
     return { ok: true };
   }};
@@ -54,10 +54,10 @@ function harness(fx) {
     requirePolicy: () => policy,
     requireState: () => state,
     publicState: () => ({}),
-    config: { pinnedProjectsDir: fx.configured },
-    projectSource: createProjectSource({ pinnedProjectsDir: fx.configured }),
+    config: { projectsDir: fx.configured },
+    projectSource: createProjectSource({ projectsDir: fx.configured }),
     projectPlanTool, projectExecuteTool, projectStatusTool,
-    pinnedCancelTool: { execute: async () => ({ status: { cancellation: { requested: true } } }) },
+    projectCancelTool: { execute: async () => ({ status: { cancellation: { requested: true } } }) },
     workflowRegistry: createWorkflowRegistry(fx.registryDir),
   });
   return { state, exec, tools, submitCalls: () => submitCalls };

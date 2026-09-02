@@ -9,7 +9,7 @@
 // NODE_PROBE= marker under set -eu).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { probeNodeHeadroom } from "../lib/pinned.js";
+import { probeNodeHeadroom } from "../lib/execution-core.js";
 
 const TEST_NODE = "gpu04";
 const probe = (stdout, { exitCode = 0, stderr = "", cpus = 4, gpus = 1, commands = [], node = TEST_NODE } = {}) =>
