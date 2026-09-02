@@ -1,0 +1,41 @@
+{
+  "name": "dsh-genbio-remote",
+  "version": "0.1.2",
+  "description": "Policy-enforced native OpenSSH Genbio remote operations with session resource envelopes, job visibility, and a client dock that shows the session envelope and live usage while remote compute is in use.",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./openviking": "./lib/openviking.js",
+    "./client": "./lib/client.js",
+    "./project": "./lib/project.js",
+    "./project-tools": "./lib/project-tools.js",
+    "./aggregate": "./lib/aggregate.js",
+    "./project-status-tools": "./lib/project-status-tools.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "tests", "cordis.patch.yml"],
+  "scripts": {"test": "node --test tests/*.test.mjs && node tests/runtime-smoke.mjs", "check": "node --check lib/index.js && node --check lib/openviking.js && node --check lib/client.js && node --check lib/inventory.js && node --check lib/run-registry.js && node --check lib/workflow.js && node --check lib/workflow-tools.js && node --check lib/aggregate.js && node --check lib/project-status-tools.js && npm test"},
+  "dsh": {
+    "bundle": {"patch": "./cordis.patch.yml"},
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-runtime", "@deepseek-ai/dsh-client-ui-conversation", "@deepseek-ai/dsh-client-locale"]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-system-prompt": "*",
+    "@deepseek-ai/dsh-session-projection": "*",
+    "@deepseek-ai/dsh-user-questions": "*",
+    "zod": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tools": {"optional": true},
+    "@deepseek-ai/dsh-system-prompt": {"optional": true},
+    "@deepseek-ai/dsh-session-projection": {"optional": true},
+    "@deepseek-ai/dsh-user-questions": {"optional": true},
+    "zod": {"optional": true}
+  }
+}

@@ -1,0 +1,26 @@
+# Dependencies
+node_modules
+node_modules/
+
+# Local and secret configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Editor and OS metadata
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime and test artifacts
+coverage/
+*.log
+*.tmp
+.t12-compat-probe.mjs
+
+# Historical working copies
+backups/
+*.bak
+*.bak-*

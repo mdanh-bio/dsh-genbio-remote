@@ -1,0 +1,25 @@
+- insert:
+    - id: genbio-remote
+      name: dsh-genbio-remote
+      config:
+        policyPath: /Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml
+        skillRoot: /Users/mdanh/.codex/skills/operate-genbio-hpc-remote
+        policyPollMs: 2000
+        commandTimeoutMs: 30000
+        smokeTimeoutMs: 180000
+        logMaxBytes: 65536
+        memoryMode: manual
+        pinnedProjectsDir: /Users/mdanh/.dsh/profiles/desktop/genbio-pinned-projects
+        # Global transfer policy (2026-08-24): all data transfers use rclone
+        # (SFTP) — never scp. Target→rclone-remote map. genbio01 was
+        # retargeted by the owner to user `mdanh` (2026-08-24 evening), so it
+        # is the correct remote for genbio_mdanh.
+        rcloneRemote:
+          HPC: hpc
+          genbioh100: genbioh100
+          genbio_mdanh: genbio01
+
+- id: openviking-memory
+  insert:
+    - id: genbio-openviking
+      name: dsh-genbio-remote/openviking
