@@ -68,6 +68,14 @@ test("project discovery and describe are local read-only manifest views", async 
   assert.equal(described.status.project.operations[0].parameters.count.type, "integer");
 });
 
+test("public inventory excludes local inode and canonical-root metadata", async (t) => {
+  const fx = await fixture(t);
+  const h = harness(fx.projectsDir);
+  const result = await h.tools.inventoryTool.execute({ project: "demo" }, exec);
+  assert.deepEqual(Object.keys(result.status.inventory.files[0]).sort(), ["rel", "sha256", "size"]);
+  assert.equal("canonicalRoot" in result.status.inventory, false);
+});
+
 test("planning is deterministic, side-effect-free, and stores session-owned immutable records", async (t) => {
   const fx = await fixture(t);
   const h = harness(fx.projectsDir);
