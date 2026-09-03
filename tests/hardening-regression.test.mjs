@@ -13,9 +13,11 @@ test("remote roots are shell-inert and reject quote injection", () => {
 
 test("fresh attempt command creates parent but rejects attempt reuse", () => {
   const command = freshRunDirectoryCommand("/data01/demo", "/data01/demo/runs/att-abc");
+  assert.match(command, /^ssh -T .* -- HPC /u);
   assert.match(command, /mkdir -p -m 700 -- '\/data01\/demo\/runs'/u);
   assert.match(command, /mkdir -m 700 -- '\/data01\/demo\/runs\/att-abc'/u);
   assert.equal(command.includes("mkdir -p -m 700 -- '/data01/demo/runs/att-abc'"), false);
+  assert.match(freshRunDirectoryCommand("/srv/demo", "/srv/demo/runs/att-xyz", "NHPC"), /^ssh -T .* -- NHPC /u);
 });
 
 test("unique Slurm names always retain the exact-once suffix", () => {

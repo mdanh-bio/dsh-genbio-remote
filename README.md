@@ -1,6 +1,6 @@
 # dsh-genbio-remote
 
-Private DeepSeek Harness plugin for policy-controlled remote scientific computing through Slurm.
+Private DeepSeek Harness plugin for policy-controlled Slurm and constrained direct-host scientific computing.
 
 ## Capabilities
 
@@ -15,14 +15,17 @@ Private DeepSeek Harness plugin for policy-controlled remote scientific computin
 - Session-ownership-checked cancellation
 - Job-owned provenance and output verification
 - Allowlisted result fetching and durable run finalization
+- Constrained `genbioh100` direct-process staging, launch, status, and fetch tools with GPU 0 protection and restart-safe run records
+- Curated `genbioh100` mirror planning and atomic promotion
+- Durable project-run rehydration plus an explicit local-only `genbio_project_status(..., reconcile: false)` snapshot mode
 
-The plugin deliberately does not expose a generic remote-command interface. Transfers use rclone rather than SCP, and uncertain submissions are reconciled instead of automatically resubmitted.
+The plugin deliberately does not expose a generic remote-command interface. Transfers use rclone rather than SCP, Slurm submission ambiguity is reconciled instead of automatically resubmitted, and direct-host launches use fixed policy-checked runners rather than arbitrary commands.
 
 ## Project model
 
-New scientific projects use a workspace-root `genbio-project.yml` (or `.yaml`) plus project-owned scripts, or a schema-v2 manifest in the configured `projectsDir`. The plugin discovers manifests lazily. Schema version 1, raw SBATCH template projects, and project-specific built-in adapters are intentionally unsupported; plugin source changes are reserved for reusable execution, policy, scheduler, or security capabilities.
+New Slurm scientific projects use a workspace-root `genbio-project.yml` (or `.yaml`) plus project-owned scripts, or a schema-v2 manifest in the configured `projectsDir`. The plugin discovers manifests lazily. Schema version 1 and raw SBATCH template projects are intentionally unsupported on this generic project surface. Separate constrained `genbioh100` direct and mirror adapters remain available for approved fixed-surface workloads; they do not provide arbitrary remote commands.
 
-See `docs/PROJECT-MANIFEST.md`, `docs/WORKFLOWS.md`, and `docs/INSTALL.md`.
+See `docs/PROJECT-MANIFEST.md`, `docs/WORKFLOWS.md`, `docs/H100-DIRECT.md`, and `docs/INSTALL.md`.
 
 The preferred lifecycle is:
 
@@ -36,7 +39,7 @@ The preferred lifecycle is:
 
 ## Local configuration
 
-Use `cordis.patch.example.yml` for installation-specific paths, workflow/execution registry roots, and simple rclone aliases. The active `cordis.patch.yml` is intentionally excluded from package contents. Cluster policy, manifests, credentials, and rclone configuration remain external.
+Use `cordis.patch.example.yml` for installation-specific paths, workflow/execution/run registry roots, constrained H100 project/mirror paths, and simple rclone aliases. The active `cordis.patch.yml` is intentionally excluded from package contents. Cluster policy, manifests, credentials, and rclone configuration remain external.
 
 ## Validation
 

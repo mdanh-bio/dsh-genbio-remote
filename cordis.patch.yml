@@ -4,7 +4,7 @@
       config:
         policyPath: /Users/mdanh/.codex/skills/operate-genbio-hpc-remote/references/genbio-compute-policy.yaml
         skillRoot: /Users/mdanh/.codex/skills/operate-genbio-hpc-remote
-        policyPollMs: 2000
+        policyPollMs: 15000
         commandTimeoutMs: 30000
         smokeTimeoutMs: 180000
         logMaxBytes: 65536
@@ -12,6 +12,10 @@
         projectsDir: /Users/mdanh/.dsh/profiles/desktop/genbio-projects
         workflowRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-workflow-registry
         executionRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-execution-registry
+        runRegistryDir: /Users/mdanh/.dsh/profiles/desktop/genbio-run-registry
+        h100DirectProjectsDir: /Users/mdanh/.dsh/profiles/desktop/genbio-h100-direct-projects
+        h100MirrorManifestPath: /Users/mdanh/.dsh/profiles/desktop/genbio-h100-mirror/mirror-manifest.yaml
+        aizymeLocalRemoteBundle: /Users/mdanh/Library/CloudStorage/OneDrive-Personal/Documents/research/DAE_enzyme/workflow/aizyme_v1/remote
         # Global transfer policy (2026-08-24): all data transfers use rclone
         # (SFTP) — never scp. Target→rclone-remote map. genbio01 was
         # retargeted by the owner to user `mdanh` (2026-08-24 evening), so it

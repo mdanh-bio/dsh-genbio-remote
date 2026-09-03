@@ -32,6 +32,6 @@ Deployment into DSH Desktop is a separate consequential operation. Review the ta
 3. Validate a clean checkout with `npm ci --ignore-scripts && npm run check`.
 4. Verify GitHub Actions succeeds.
 5. Update `CHANGELOG.md` and the package version.
-6. Create a signed/reviewed tag such as `v0.3.0`.
+6. Create a signed/reviewed tag such as `v0.4.0`.
 7. Create the private GitHub release.
 8. Request separate approval before installing or running remote tests.
