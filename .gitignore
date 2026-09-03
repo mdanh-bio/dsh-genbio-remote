@@ -18,7 +18,6 @@ node_modules/
 coverage/
 *.log
 *.tmp
-.t12-compat-probe.mjs
 
 # Historical working copies
 backups/

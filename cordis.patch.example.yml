@@ -3,7 +3,7 @@
       name: dsh-genbio-remote
       config:
         policyPath: /absolute/path/to/genbio-compute-policy.yaml
-        policyPollMs: 2000
+        policyPollMs: 15000
         commandTimeoutMs: 30000
         smokeTimeoutMs: 180000
         logMaxBytes: 65536
@@ -11,6 +11,10 @@
         projectsDir: /absolute/path/to/central-genbio-projects
         workflowRegistryDir: /absolute/path/to/genbio-workflow-registry
         executionRegistryDir: /absolute/path/to/genbio-execution-registry
+        runRegistryDir: /absolute/path/to/genbio-run-registry
+        h100DirectProjectsDir: /absolute/path/to/genbio-h100-direct-projects
+        h100MirrorManifestPath: /absolute/path/to/genbio-h100-mirror/mirror-manifest.yaml
+        aizymeLocalRemoteBundle: /absolute/path/to/aizyme_v1/remote
         rcloneRemote:
           HPC: your-hpc-rclone-remote
           NHPC: your-nhpc-rclone-remote

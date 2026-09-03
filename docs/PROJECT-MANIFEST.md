@@ -60,4 +60,6 @@ genbio_project_cancel
 genbio_project_fetch
 ```
 
-Planning securely reads every declared package file and includes the canonical `packageSha` in `genbio-plan/2`. Execution rebuilds that inventory, rejects byte drift, snapshots approved files through no-follow handles, persists a durable attempt, creates `<remote_root>/runs/<attempt-id>` fresh, and stages only the private snapshot. `genbio_project_execute` returns a durable `run_id`; use it for restart-safe status and allowlisted fetch. Fetch now requires `project`, `run_id`, and optional `files`.
+Planning securely reads every declared package file and includes the canonical `packageSha` in `genbio-plan/2`. Execution rebuilds that inventory, rejects byte drift, snapshots approved files through no-follow handles, persists a durable attempt, creates `<remote_root>/runs/<attempt-id>` fresh, and stages only the private snapshot. `genbio_project_execute` returns a durable `run_id`; use it for restart-safe status and allowlisted fetch. Fetch requires `project`, `run_id`, and optional `files`.
+
+`genbio_project_status` reconciles scheduler evidence by default when a `run_id` or exact operation/job ID is supplied. Pass `reconcile: false` with a `run_id` for a local-only durable snapshot; the result reports `scheduler_evidence: skipped` and `reconciliation_pending: true` when fresh scheduler evidence is still required. A resource envelope remains session-scoped and must be set again after restarting DSH Desktop.

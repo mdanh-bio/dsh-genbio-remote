@@ -121,6 +121,15 @@ test("status reports session plans without scheduler or remote activity", async 
   assert.deepEqual(status.status.project_runs, []);
 });
 
+test("status reconcile=false is local-only and rejects exact scheduler arguments", async (t) => {
+  const fx = await fixture(t);
+  const h = harness(fx.projectsDir);
+  const status = await h.tools.statusTool.execute({ project: "demo", reconcile: false }, exec);
+  assert.equal(status.status.scheduler_evidence, "skipped");
+  assert.deepEqual(status.status.project_runs, []);
+  await assert.rejects(h.tools.statusTool.execute({ project: "demo", operation: "run", job_id: "123", reconcile: false }, exec), /reconcile=false/u);
+});
+
 test("unsafe and unknown project names fail closed", async (t) => {
   const fx = await fixture(t);
   const h = harness(fx.projectsDir);

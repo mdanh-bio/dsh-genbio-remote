@@ -15,13 +15,15 @@ test("durable reservation survives registry recreation and pair-gates", async (t
   const b = createExecutionRegistry(root);
   assert.equal((await b.find(record.runId)).allocationStatus, "submitting");
   await assert.rejects(b.reserve(reservation()), /durable active attempt/u);
+  await assert.rejects(b.reserve(reservation({ policyHash: "b".repeat(64) })), /different policy hash/u);
 });
 
-test("job id is write-once and unknown fields fail closed", async (t) => {
+test("job id and policy identity are immutable, and unknown fields fail closed", async (t) => {
   const root = await fixture(t); const registry = createExecutionRegistry(root); const { record } = await registry.reserve(reservation());
   const submitted = await registry.update(record.runId, (item) => ({ ...item, uniqueJobName: "demo.12345678", sbatchIssued: true, slurmJobId: "1234", workloadStatus: "submitted", allocationStatus: "nonterminal" }));
   assert.equal(submitted.slurmJobId, "1234");
   await assert.rejects(registry.update(record.runId, (item) => ({ ...item, slurmJobId: "9999" })), /write-once/u);
+  await assert.rejects(registry.update(record.runId, (item) => ({ ...item, policyHash: "b".repeat(64) })), /immutable identity/u);
   const parsed = JSON.parse(await (await import("node:fs/promises")).readFile(registry.file, "utf8")); parsed.records[0].stdout = "secret"; await writeFile(registry.file, JSON.stringify(parsed));
   await assert.rejects(registry.list(), /unknown field stdout/u);
 });
