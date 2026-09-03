@@ -34,7 +34,6 @@
     "CHANGELOG.md",
     "LICENSE",
     ".t12-compat-probe.mjs",
-    "cordis.patch.yml",
     "cordis.patch.example.yml"
   ],
   "scripts": {
